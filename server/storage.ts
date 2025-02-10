@@ -1,6 +1,6 @@
 import { tasks, type Task, type InsertTask, type UpdateTask } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   getTasks(): Promise<Task[]>;
@@ -17,7 +17,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(tasks)
       .where(eq(tasks.inBacklog, false))
-      .orderBy(tasks.priority);
+      .orderBy(desc(tasks.priority));
   }
 
   async getBacklogTasks(): Promise<Task[]> {
@@ -25,7 +25,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(tasks)
       .where(eq(tasks.inBacklog, true))
-      .orderBy(tasks.createdAt);
+      .orderBy(desc(tasks.createdAt));
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
