@@ -1,11 +1,21 @@
-import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+export const PriorityLevel = {
+  HIGH: 'high',
+  MEDIUM_HIGH: 'medium-high',
+  MEDIUM: 'medium',
+  MEDIUM_LOW: 'medium-low',
+  LOW: 'low',
+} as const;
+
+export type PriorityLevel = typeof PriorityLevel[keyof typeof PriorityLevel];
 
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  priority: integer("priority").notNull().default(0),
+  priority: text("priority").notNull().default(PriorityLevel.MEDIUM),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   inBacklog: boolean("in_backlog").notNull().default(false),
   completed: boolean("completed").notNull().default(false)

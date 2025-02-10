@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { PriorityLevel } from "@shared/schema";
 
 export default function BrainDump() {
   const [input, setInput] = useState("");
@@ -19,16 +20,19 @@ export default function BrainDump() {
 
     try {
       await Promise.all(
-        tasks.map((title, index) =>
-          apiRequest("POST", "/api/tasks", { title, priority: tasks.length - index })
+        tasks.map((title) =>
+          apiRequest("POST", "/api/tasks", { 
+            title, 
+            priority: PriorityLevel.MEDIUM 
+          })
         )
       );
-      
+
       toast({
         title: "Brain dump completed!",
         description: `${tasks.length} tasks have been created.`
       });
-      
+
       setLocation("/");
     } catch (error) {
       toast({
@@ -49,7 +53,7 @@ export default function BrainDump() {
         <Card className="mb-6">
           <CardContent className="p-6">
             <p className="text-muted-foreground mb-4">
-              Write down everything that's on your mind, one task per line. Don't worry about order - you can prioritize them later.
+              Write down everything that's on your mind, one task per line. Don't worry about order - you can set priorities later.
             </p>
             <Textarea
               value={input}

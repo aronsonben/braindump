@@ -1,6 +1,14 @@
-import { tasks, type Task, type InsertTask, type UpdateTask } from "@shared/schema";
+import { tasks, type Task, type InsertTask, type UpdateTask, PriorityLevel } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
+
+const priorityOrder = {
+  [PriorityLevel.HIGH]: 5,
+  [PriorityLevel.MEDIUM_HIGH]: 4,
+  [PriorityLevel.MEDIUM]: 3,
+  [PriorityLevel.MEDIUM_LOW]: 2,
+  [PriorityLevel.LOW]: 1,
+};
 
 export interface IStorage {
   getTasks(): Promise<Task[]>;
@@ -13,11 +21,14 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getTasks(): Promise<Task[]> {
-    return await db
+    const allTasks = await db
       .select()
       .from(tasks)
-      .where(eq(tasks.inBacklog, false))
-      .orderBy(desc(tasks.priority));
+      .where(eq(tasks.inBacklog, false));
+
+    return allTasks.sort((a, b) => 
+      priorityOrder[b.priority as PriorityLevel] - priorityOrder[a.priority as PriorityLevel]
+    );
   }
 
   async getBacklogTasks(): Promise<Task[]> {
