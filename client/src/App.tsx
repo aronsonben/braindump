@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import BrainDump from "@/pages/brain-dump";
 import Backlog from "@/pages/backlog";
+import Categories from "@/pages/categories";
 
 function Router() {
   return (
@@ -13,6 +14,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/brain-dump" component={BrainDump} />
       <Route path="/backlog" component={Backlog} />
+      <Route path="/categories" component={Categories} />
       <Route component={NotFound} />
     </Switch>
   );

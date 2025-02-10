@@ -1,9 +1,10 @@
 import { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertTaskSchema, updateTaskSchema } from "@shared/schema";
+import { insertTaskSchema, updateTaskSchema, insertCategorySchema } from "@shared/schema";
 
 export function registerRoutes(app: Express) {
+  // Task routes
   app.get("/api/tasks", async (_req, res) => {
     const tasks = await storage.getTasks();
     res.json(tasks);
@@ -42,6 +43,27 @@ export function registerRoutes(app: Express) {
   app.delete("/api/tasks/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     await storage.deleteTask(id);
+    res.status(204).send();
+  });
+
+  // Category routes
+  app.get("/api/categories", async (_req, res) => {
+    const categories = await storage.getCategories();
+    res.json(categories);
+  });
+
+  app.post("/api/categories", async (req, res) => {
+    const result = insertCategorySchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    const category = await storage.createCategory(result.data);
+    res.json(category);
+  });
+
+  app.delete("/api/categories/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    await storage.deleteCategory(id);
     res.status(204).send();
   });
 

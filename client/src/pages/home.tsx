@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { TaskList } from "@/components/task-list";
-import { BrainCircuit, Archive } from "lucide-react";
+import { BrainCircuit, Archive, FolderOpen } from "lucide-react";
 import { Task } from "@shared/schema";
 
 export default function Home() {
@@ -22,6 +22,12 @@ export default function Home() {
               <Button className="flex items-center gap-2">
                 <BrainCircuit className="h-5 w-5" />
                 New Brain Dump
+              </Button>
+            </Link>
+            <Link href="/categories">
+              <Button variant="outline" className="flex items-center gap-2">
+                <FolderOpen className="h-5 w-5" />
+                Categories
               </Button>
             </Link>
             <Link href="/backlog">

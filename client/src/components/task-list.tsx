@@ -1,6 +1,6 @@
 import { Task, PriorityLevel } from "@shared/schema";
 import { differenceInDays } from "date-fns";
-import { Flag, Archive, ChevronDown } from "lucide-react";
+import { Flag, Archive, ChevronDown, FolderOpen } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -14,10 +14,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 
 interface TaskListProps {
   tasks: Task[];
@@ -27,6 +30,7 @@ interface TaskListProps {
 
 export function TaskList({ tasks, showAge = true, showBacklogButton = true }: TaskListProps) {
   const { toast } = useToast();
+  const { data: categories } = useQuery({ queryKey: ["/api/categories"] });
 
   const getAgeColor = (days: number) => {
     if (days <= 3) return "text-green-600";
@@ -64,6 +68,23 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
     }
   };
 
+  const handleCategoryChange = async (taskId: number, categoryId: number | null) => {
+    try {
+      await apiRequest("PATCH", `/api/tasks/${taskId}`, { categoryId });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      toast({
+        title: "Category updated",
+        description: "Task category has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating category",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleMoveToBacklog = async (id: number) => {
     try {
       await apiRequest("POST", `/api/tasks/${id}/backlog`);
@@ -88,6 +109,7 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
           <TableRow>
             <TableHead>Task</TableHead>
             {showAge && <TableHead>Age</TableHead>}
+            <TableHead>Category</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead className="w-[100px]">Actions</TableHead>
           </TableRow>
@@ -95,6 +117,7 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
         <TableBody>
           {tasks.map((task) => {
             const daysOld = differenceInDays(new Date(), new Date(task.createdAt));
+            const taskCategory = categories?.find(c => c.id === task.categoryId);
 
             return (
               <TableRow key={task.id}>
@@ -104,6 +127,18 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
                     {daysOld} days
                   </TableCell>
                 )}
+                <TableCell>
+                  {taskCategory ? (
+                    <Badge 
+                      variant="secondary" 
+                      style={{ backgroundColor: taskCategory.color }}
+                    >
+                      {taskCategory.name}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">No category</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   <div className={`font-medium ${getPriorityColor(task.priority)}`}>
                     <Flag className="h-4 w-4 inline-block mr-1" />
@@ -149,6 +184,23 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
                           <Flag className="h-4 w-4 mr-2 text-green-500" />
                           Low Priority
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleCategoryChange(task.id, null)}>
+                          <FolderOpen className="h-4 w-4 mr-2" />
+                          Remove Category
+                        </DropdownMenuItem>
+                        {categories?.map((category) => (
+                          <DropdownMenuItem 
+                            key={category.id}
+                            onClick={() => handleCategoryChange(task.id, category.id)}
+                          >
+                            <div 
+                              className="h-4 w-4 mr-2 rounded-full"
+                              style={{ backgroundColor: category.color }}
+                            />
+                            {category.name}
+                          </DropdownMenuItem>
+                        ))}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
