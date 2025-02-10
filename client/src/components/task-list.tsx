@@ -1,5 +1,21 @@
-import { Task } from "@shared/schema";
-import { TaskCard } from "./task-card";
+import { Task, PriorityLevel } from "@shared/schema";
+import { differenceInDays } from "date-fns";
+import { Flag, Archive, ChevronDown } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -12,7 +28,30 @@ interface TaskListProps {
 export function TaskList({ tasks, showAge = true, showBacklogButton = true }: TaskListProps) {
   const { toast } = useToast();
 
-  const handlePriorityChange = async (id: number, priority: number) => {
+  const getAgeColor = (days: number) => {
+    if (days <= 3) return "text-green-600";
+    if (days <= 7) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case PriorityLevel.HIGH:
+        return "text-red-500";
+      case PriorityLevel.MEDIUM_HIGH:
+        return "text-orange-500";
+      case PriorityLevel.MEDIUM:
+        return "text-yellow-500";
+      case PriorityLevel.MEDIUM_LOW:
+        return "text-blue-500";
+      case PriorityLevel.LOW:
+        return "text-green-500";
+      default:
+        return "text-gray-500";
+    }
+  };
+
+  const handlePriorityChange = async (id: number, priority: string) => {
     try {
       await apiRequest("PATCH", `/api/tasks/${id}`, { priority });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
@@ -43,16 +82,82 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
   };
 
   return (
-    <div className="space-y-4">
-      {tasks.map((task) => (
-        <TaskCard
-          key={task.id}
-          task={task}
-          onPriorityChange={handlePriorityChange}
-          onMoveToBacklog={showBacklogButton ? handleMoveToBacklog : undefined}
-          showAge={showAge}
-        />
-      ))}
+    <div className="border rounded-lg">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Task</TableHead>
+            {showAge && <TableHead>Age</TableHead>}
+            <TableHead>Priority</TableHead>
+            <TableHead className="w-[100px]">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {tasks.map((task) => {
+            const daysOld = differenceInDays(new Date(), new Date(task.createdAt));
+
+            return (
+              <TableRow key={task.id}>
+                <TableCell>{task.title}</TableCell>
+                {showAge && (
+                  <TableCell className={getAgeColor(daysOld)}>
+                    {daysOld} days
+                  </TableCell>
+                )}
+                <TableCell>
+                  <div className={`font-medium ${getPriorityColor(task.priority)}`}>
+                    <Flag className="h-4 w-4 inline-block mr-1" />
+                    {task.priority}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {showBacklogButton && daysOld > 7 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMoveToBacklog(task.id)}
+                      >
+                        <Archive className="h-4 w-4 mr-1" />
+                        Backlog
+                      </Button>
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handlePriorityChange(task.id, PriorityLevel.HIGH)}>
+                          <Flag className="h-4 w-4 mr-2 text-red-500" />
+                          High Priority
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePriorityChange(task.id, PriorityLevel.MEDIUM_HIGH)}>
+                          <Flag className="h-4 w-4 mr-2 text-orange-500" />
+                          Medium-High Priority
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePriorityChange(task.id, PriorityLevel.MEDIUM)}>
+                          <Flag className="h-4 w-4 mr-2 text-yellow-500" />
+                          Medium Priority
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePriorityChange(task.id, PriorityLevel.MEDIUM_LOW)}>
+                          <Flag className="h-4 w-4 mr-2 text-blue-500" />
+                          Medium-Low Priority
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePriorityChange(task.id, PriorityLevel.LOW)}>
+                          <Flag className="h-4 w-4 mr-2 text-green-500" />
+                          Low Priority
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }
