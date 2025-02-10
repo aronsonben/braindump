@@ -1,4 +1,6 @@
 import { tasks, type Task, type InsertTask, type UpdateTask } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getTasks(): Promise<Task[]>;
@@ -9,48 +11,47 @@ export interface IStorage {
   deleteTask(id: number): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private tasks: Map<number, Task>;
-  private currentId: number;
-
-  constructor() {
-    this.tasks = new Map();
-    this.currentId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getTasks(): Promise<Task[]> {
-    return Array.from(this.tasks.values())
-      .filter(task => !task.inBacklog)
-      .sort((a, b) => b.priority - a.priority);
+    return await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.inBacklog, false))
+      .orderBy(tasks.priority);
   }
 
   async getBacklogTasks(): Promise<Task[]> {
-    return Array.from(this.tasks.values())
-      .filter(task => task.inBacklog)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.inBacklog, true))
+      .orderBy(tasks.createdAt);
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const id = this.currentId++;
-    const task: Task = {
-      ...insertTask,
-      id,
-      createdAt: new Date(),
-      inBacklog: false,
-      completed: false
-    };
-    this.tasks.set(id, task);
+    const [task] = await db
+      .insert(tasks)
+      .values({
+        ...insertTask,
+        inBacklog: false,
+        completed: false,
+      })
+      .returning();
     return task;
   }
 
   async updateTask(id: number, updates: Partial<UpdateTask>): Promise<Task> {
-    const task = this.tasks.get(id);
+    const [task] = await db
+      .update(tasks)
+      .set(updates)
+      .where(eq(tasks.id, id))
+      .returning();
+
     if (!task) {
       throw new Error(`Task with id ${id} not found`);
     }
-    const updatedTask = { ...task, ...updates };
-    this.tasks.set(id, updatedTask);
-    return updatedTask;
+
+    return task;
   }
 
   async moveToBacklog(id: number): Promise<Task> {
@@ -58,8 +59,8 @@ export class MemStorage implements IStorage {
   }
 
   async deleteTask(id: number): Promise<void> {
-    this.tasks.delete(id);
+    await db.delete(tasks).where(eq(tasks.id, id));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
