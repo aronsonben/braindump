@@ -1,6 +1,6 @@
 import { Task, PriorityLevel } from "@shared/schema";
 import { differenceInDays } from "date-fns";
-import { Flag, Archive, ChevronDown, FolderOpen } from "lucide-react";
+import { Flag, Archive, ChevronDown, FolderOpen, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -102,16 +102,33 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
     }
   };
 
+  const handleDeleteTask = async (id: number) => {
+    try {
+      await apiRequest("DELETE", `/api/tasks/${id}`);
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      toast({
+        title: "Task deleted",
+        description: "Task has been removed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error deleting task",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <div className="border rounded-lg">
+    <div className="border rounded-lg bg-white shadow-sm">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Task</TableHead>
-            {showAge && <TableHead>Age</TableHead>}
-            <TableHead>Category</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+          <TableRow className="hover:bg-gray-50">
+            <TableHead className="font-semibold text-gray-900">Task</TableHead>
+            {showAge && <TableHead className="font-semibold text-gray-900">Age</TableHead>}
+            <TableHead className="font-semibold text-gray-900">Category</TableHead>
+            <TableHead className="font-semibold text-gray-900">Priority</TableHead>
+            <TableHead className="font-semibold text-gray-900 w-[150px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -120,23 +137,27 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
             const taskCategory = categories?.find(c => c.id === task.categoryId);
 
             return (
-              <TableRow key={task.id}>
-                <TableCell>{task.title}</TableCell>
+              <TableRow key={task.id} className="hover:bg-gray-50">
+                <TableCell className="font-medium text-gray-900">{task.title}</TableCell>
                 {showAge && (
-                  <TableCell className={getAgeColor(daysOld)}>
+                  <TableCell className={`${getAgeColor(daysOld)} font-medium`}>
                     {daysOld} days
                   </TableCell>
                 )}
                 <TableCell>
                   {taskCategory ? (
-                    <Badge 
-                      variant="secondary" 
-                      style={{ backgroundColor: taskCategory.color }}
+                    <Badge
+                      variant="secondary"
+                      style={{
+                        backgroundColor: taskCategory.color,
+                        color: 'white',
+                        fontWeight: 'medium'
+                      }}
                     >
                       {taskCategory.name}
                     </Badge>
                   ) : (
-                    <span className="text-muted-foreground text-sm">No category</span>
+                    <span className="text-gray-500 text-sm">No category</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -147,11 +168,20 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="text-gray-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                     {showBacklogButton && daysOld > 7 && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleMoveToBacklog(task.id)}
+                        className="text-gray-700 hover:bg-gray-100"
                       >
                         <Archive className="h-4 w-4 mr-1" />
                         Backlog
@@ -159,7 +189,11 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        >
                           <ChevronDown className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -190,11 +224,11 @@ export function TaskList({ tasks, showAge = true, showBacklogButton = true }: Ta
                           Remove Category
                         </DropdownMenuItem>
                         {categories?.map((category) => (
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             key={category.id}
                             onClick={() => handleCategoryChange(task.id, category.id)}
                           >
-                            <div 
+                            <div
                               className="h-4 w-4 mr-2 rounded-full"
                               style={{ backgroundColor: category.color }}
                             />
