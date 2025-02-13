@@ -46,6 +46,16 @@ export function registerRoutes(app: Express) {
     res.status(204).send();
   });
 
+  // Add this route with the existing task routes
+  app.post("/api/tasks/reorder", async (req, res) => {
+    const taskIds = req.body.taskIds;
+    if (!Array.isArray(taskIds)) {
+      return res.status(400).json({ error: "taskIds must be an array" });
+    }
+    await storage.reorderTasks(taskIds);
+    res.status(204).send();
+  });
+
   // Category routes
   app.get("/api/categories", async (_req, res) => {
     const categories = await storage.getCategories();

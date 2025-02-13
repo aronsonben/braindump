@@ -1,14 +1,6 @@
-import { tasks, categories, type Task, type InsertTask, type UpdateTask, type Category, type InsertCategory, PriorityLevel } from "@shared/schema";
+import { tasks, categories, type Task, type InsertTask, type UpdateTask, type Category, type InsertCategory } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
-
-const priorityOrder = {
-  [PriorityLevel.HIGH]: 5,
-  [PriorityLevel.MEDIUM_HIGH]: 4,
-  [PriorityLevel.MEDIUM]: 3,
-  [PriorityLevel.MEDIUM_LOW]: 2,
-  [PriorityLevel.LOW]: 1,
-};
+import { eq, desc, asc } from "drizzle-orm";
 
 export interface IStorage {
   // Task operations
@@ -18,6 +10,7 @@ export interface IStorage {
   updateTask(id: number, updates: Partial<UpdateTask>): Promise<Task>;
   moveToBacklog(id: number): Promise<Task>;
   deleteTask(id: number): Promise<void>;
+  reorderTasks(taskIds: number[]): Promise<void>;
 
   // Category operations
   getCategories(): Promise<Category[]>;
@@ -27,14 +20,11 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getTasks(): Promise<Task[]> {
-    const allTasks = await db
+    return await db
       .select()
       .from(tasks)
-      .where(eq(tasks.inBacklog, false));
-
-    return allTasks.sort((a, b) => 
-      priorityOrder[b.priority as PriorityLevel] - priorityOrder[a.priority as PriorityLevel]
-    );
+      .where(eq(tasks.inBacklog, false))
+      .orderBy(asc(tasks.position));
   }
 
   async getBacklogTasks(): Promise<Task[]> {
@@ -46,10 +36,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
+    // Get the highest position
+    const [lastTask] = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.inBacklog, false))
+      .orderBy(desc(tasks.position))
+      .limit(1);
+
+    const position = lastTask ? (lastTask.position || 0) + 1 : 0;
+
     const [task] = await db
       .insert(tasks)
       .values({
         ...insertTask,
+        position,
         inBacklog: false,
         completed: false,
       })
@@ -77,6 +78,18 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTask(id: number): Promise<void> {
     await db.delete(tasks).where(eq(tasks.id, id));
+  }
+
+  async reorderTasks(taskIds: number[]): Promise<void> {
+    // Update positions in a transaction
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < taskIds.length; i++) {
+        await tx
+          .update(tasks)
+          .set({ position: i })
+          .where(eq(tasks.id, taskIds[i]));
+      }
+    });
   }
 
   async getCategories(): Promise<Category[]> {

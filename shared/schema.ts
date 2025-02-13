@@ -31,7 +31,8 @@ export const tasks = pgTable("tasks", {
   categoryId: integer("category_id").references(() => categories.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   inBacklog: boolean("in_backlog").notNull().default(false),
-  completed: boolean("completed").notNull().default(false)
+  completed: boolean("completed").notNull().default(false),
+  position: integer("position"),  // New field for custom ordering
 });
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
@@ -44,14 +45,16 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
 export const insertTaskSchema = createInsertSchema(tasks).pick({
   title: true,
   priority: true,
-  categoryId: true
+  categoryId: true,
+  position: true
 });
 
 export const updateTaskSchema = createInsertSchema(tasks).pick({
   priority: true,
   inBacklog: true,
   completed: true,
-  categoryId: true
+  categoryId: true,
+  position: true
 });
 
 export const insertCategorySchema = createInsertSchema(categories).pick({
