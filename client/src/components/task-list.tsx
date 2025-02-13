@@ -1,4 +1,4 @@
-import { Task, PriorityLevel } from "@shared/schema";
+import { Task, PriorityLevel, type Category } from "@shared/schema";
 import { differenceInDays } from "date-fns";
 import { Flag, Archive, ChevronDown, FolderOpen, Trash2, GripVertical } from "lucide-react";
 import {
@@ -43,7 +43,12 @@ interface TaskListProps {
   showBacklogButton?: boolean;
 }
 
-function SortableTableRow({ task, children, ...props }: any) {
+interface SortableTableRowProps {
+  task: Task;
+  children: (attributes: any, listeners: any) => React.ReactNode;
+}
+
+function SortableTableRow({ task, children, ...props }: SortableTableRowProps) {
   const {
     attributes,
     listeners,
@@ -73,7 +78,7 @@ function SortableTableRow({ task, children, ...props }: any) {
 
 export function TaskList({ tasks, showAge = true, showBacklogButton = true }: TaskListProps) {
   const { toast } = useToast();
-  const { data: categories } = useQuery({ queryKey: ["/api/categories"] });
+  const { data: categories } = useQuery<Category[]>({ queryKey: ["/api/categories"] });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
