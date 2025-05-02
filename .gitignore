@@ -24,7 +24,6 @@
 .DS_Store
 *.pem
 braindump.code-workspace
-src/app/braindump.code-workspace
 
 # debug
 npm-debug.log*

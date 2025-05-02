@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import { createClient } from "@/utils/supabase/server";
 import { signOutAction } from "@/app/actions";
-import { getUserProfile } from "@/utils/supabase/fetchData";
+// import { getUserProfile } from "@/utils/supabase/fetchData";
 
 export default async function AuthButton() {
   const supabase = await createClient();
@@ -13,7 +13,6 @@ export default async function AuthButton() {
   } = await supabase.auth.getUser();
 
   // const profile = user ? await getUserProfile(user.id) : null;
-  const profile = null;
 
   return user ? (
     <div className="flex items-center gap-4">
