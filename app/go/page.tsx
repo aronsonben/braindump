@@ -1,5 +1,8 @@
 import { cache } from 'react'
 import { redirect } from "next/navigation";
+import Link from 'next/link';
+import { Button } from "@/components/ui/button";
+import { BrainCircuit, FolderOpen, Archive } from "lucide-react";
 import Home from "@/components/home";
 import { getUserData, getTasks, getCategories } from "@/utils/supabase/fetchData";
 
@@ -35,7 +38,27 @@ export default async function Go() {
   } 
 
   return (
-    <main className="flex flex-col gap-8 p-4 justify-center items-center">
+    <main className="flex flex-col gap-4 p-4 justify-center items-center">
+      <div className="flex gap-4">
+        <Link href="/braindump">
+          <Button className="flex items-center gap-2">
+            <BrainCircuit className="h-5 w-5" />
+            New Brain Dump
+          </Button>
+        </Link>
+        <Link href="/categories">
+          <Button variant="outline" className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5" />
+            Categories
+          </Button>
+        </Link>
+        <Link href="/backlog">
+          <Button variant="outline" className="flex items-center gap-2">
+            <Archive className="h-5 w-5" />
+            Backlog
+          </Button>
+        </Link>
+      </div>
       <Home tasks={tasks} categories={categories} />
     </main>
   );
