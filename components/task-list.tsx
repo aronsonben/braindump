@@ -34,13 +34,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { changePriority, changeCategory } from '@/actions/actions';
+import { changePriority, changeCategory, moveToBacklog, deleteTask } from '@/actions/actions';
 import { Task, PriorityLevel, Category } from "@/lib/interface";
 import { Flag, Archive, FolderOpen, Trash2, GripVertical } from "lucide-react";
 // import { differenceInDays } from "date-fns";
-// import { useToast } from "@/hooks/use-toast";
 
 interface TaskListProps {
   tasks: Task[];
@@ -83,7 +84,7 @@ function SortableTableRow({ task, children, ...props }: SortableTableRowProps) {
 }
 
 export function TaskList({ tasks, categories, showAge = true, showBacklogButton = true }: TaskListProps) {
-  // const { toast } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     // This is a placeholder for any side effects you might want to run when tasks change
@@ -152,9 +153,23 @@ export function TaskList({ tasks, categories, showAge = true, showBacklogButton 
     // backlogMutation.mutate(id);
   };
 
-  const handleDeleteTask = (id: number) => {
-    console.log(`Deleting task ${id}`);
-    // deleteMutation.mutate(id);
+  const handleDeleteTask = async (id: number) => {
+    deleteTask(id).then(() => {
+      console.log(`Task ${id} deleted`);
+        toast({
+          title: "Task deleted",
+          description: "The task has been deleted successfully.",
+          action: <ToastAction altText="Undo">Undo</ToastAction>,
+        });
+      }).catch((error) => {
+        console.error("Error deleting task:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete the task.",
+          action: <ToastAction altText="Retry">Retry</ToastAction>,
+        });
+      }
+    );
   };
 
   return (

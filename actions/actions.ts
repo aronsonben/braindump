@@ -5,6 +5,59 @@ import { Task, PriorityLevel, Category } from "@/lib/interface";
 import { createClient } from "@/utils/supabase/server";
 
 /**
+ * Creates a new task from the braindump functionality
+ * @param taskList set of new tasks, split by new line and set back as list
+ */
+export async function createTasks(taskList: string[]) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Rate limiting - limit tasks per request
+  if (taskList.length > 50) {
+    throw new Error("Too many tasks in a single request");
+  }
+
+  // Server-side validation of task stirngs
+  const validTasks = taskList.filter(task => {
+    const trimmed = task.trim();
+    if (trimmed.length === 0 || trimmed.length > 200) return false;
+    
+    const safePattern = /^[a-zA-Z0-9\s.,;:!?()[\]{}'"@#$%&*_\-+=<>\/\\]+$/;
+    return safePattern.test(trimmed);
+  });
+
+  for (const text of validTasks) {
+    console.log("Creating task:", text);
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert({
+        user_id: user.id,
+        title: text,
+        priority: PriorityLevel.MEDIUM,
+        category_id: null,
+        created_at: new Date(),
+        in_backlog: false,
+        completed: false,
+        last_reminded: null,
+      })
+      .select();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  revalidatePath("/go");
+}
+
+/**
  * Change the priority level of a given task.
  * @param taskId task id
  * @param priority new priority level

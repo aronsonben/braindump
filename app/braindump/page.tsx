@@ -1,47 +1,54 @@
 "use client"
 
 import { useState } from "react";
-import { redirect } from "next/navigation";
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { createTasks } from "@/actions/actions";
 import { PriorityLevel } from "@/lib/interface";
+import { sanitizeTask } from "@/lib/utils";
 
 export default function BrainDump() {
   const [input, setInput] = useState("");
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleSubmit = async () => {
-    const tasks = input
+    const sanitizedTasks = input
       .split("\n")
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
+      .map(line => sanitizeTask(line.trim()))
+      .filter(line => line !== null) as string[];
 
-    try {
-      // TODO: Replace with server action 
-      // await Promise.all(
-      //   tasks.map((title) =>
-      //     fetch("POST", "/api/tasks", { 
-      //       title, 
-      //       priority: PriorityLevel.MEDIUM 
-      //     })
-      //   )
-      // );
+      if (sanitizedTasks.length === 0) {
+        toast({
+          title: "No valid tasks",
+          description: "Please enter at least one valid task",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      toast({
-        title: "Brain dump completed!",
-        description: `${tasks.length} tasks have been created.`
-      });
-
-      // setLocation("/");
-    } catch (error) {
-      toast({
-        title: "Error creating tasks",
-        description: "Please try again",
-        variant: "destructive"
-      });
-    }
+      try {
+        console.log("Creating tasks:", sanitizedTasks);
+        createTasks(sanitizedTasks);
+    
+        toast({
+          title: "Brain dump completed!",
+          description: `${sanitizedTasks.length} tasks have been created.`
+        });
+    
+        console.log("back to go");
+        router.push("/go");
+      } catch (error) {
+        console.error("Error creating tasks:", error);
+        toast({
+          title: "Error creating tasks",
+          description: "Please try again",
+          variant: "destructive"
+        });
+      }
   };
 
   return (
@@ -63,7 +70,7 @@ export default function BrainDump() {
               className="min-h-[300px] mb-4"
             />
             <div className="flex justify-end gap-4">
-              <Button variant="outline" onClick={() => redirect("/")}>
+              <Button variant="outline" onClick={() => router.push("/")}>
                 Cancel
               </Button>
               <Button onClick={handleSubmit} disabled={!input.trim()}>
