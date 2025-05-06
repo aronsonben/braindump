@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-// import { PickerPage, Profile, Track } from "@/lib/interface";
+import { Profile, Task, Category } from "@/lib/interface"
 // import { SupabaseClient } from "@supabase/supabase-js";
 
 export const getUserData = async (userName?: string) => {
@@ -16,12 +16,6 @@ export const getUserData = async (userName?: string) => {
   }
 
   const { data, error } = await supabase.auth.getUser();
-  
-  // Not checking for error because this should either return the user or null 
-  // Pages will handle the null response 
-  // if (error) {
-  //   throw new Error(error?.message || "Unknown error");
-  // }
 
   if (!data?.user) {
     return null;
@@ -30,6 +24,53 @@ export const getUserData = async (userName?: string) => {
   return data.user;
 };
 
+export const getUserProfile = async (user_id: string) => {
+  const supabase = await createClient();
+
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user_id)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return profile as Profile;
+}
+
+export const getTasks = async (user_id: string) => {
+  const supabase = await createClient();
+
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("user_id", user_id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return tasks as Task[];
+};
+
+export const getCategories = async (user_id: string) => {
+  const supabase = await createClient();
+
+  const { data: categories, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("user_id", user_id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return categories as Category[];
+};
+
+
 // export const getUserIdByName = async (username: string) => {
 //   const supabase = await createClient();
 
@@ -37,22 +78,6 @@ export const getUserData = async (userName?: string) => {
 //     .from("profiles")
 //     .select("*")
 //     .eq("username", username)
-//     .single();
-
-//   if (error) {
-//     throw new Error(error.message);
-//   }
-
-//   return profile as Profile;
-// }
-
-// export const getUserProfile = async (user_id: string) => {
-//   const supabase = await createClient();
-
-//   const { data: profile, error } = await supabase
-//     .from("profiles")
-//     .select("*")
-//     .eq("id", user_id)
 //     .single();
 
 //   if (error) {

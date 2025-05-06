@@ -1,17 +1,42 @@
-import Link from "next/link";
+import { cache } from 'react'
+import { redirect } from "next/navigation";
+import Home from "@/components/home";
+import { getUserData, getTasks, getCategories } from "@/utils/supabase/fetchData";
 
-export default function Go() {
+const getTasksCached = cache(getTasks);
+const getCategoriesCached = cache(getCategories);
+
+// Learning: considering using parallel data fetching per Next.js docs
+/**
+async function getTasksParallel(userId: string) {
+  const tasks = await getTasks(userId);
+  return tasks;
+}
+async function getCategoriesParallel(userId: string) {
+  const categories = await getCategories(userId);
+  return categories;
+}
+*/
+
+export default async function Go() {
+  const user = await getUserData();
+  const tasks = await getTasksCached(user.id);
+  const categories = await getCategoriesCached(user.id);
+
+  if (!user) {
+    console.log("User not found");
+    return redirect("/");
+  } 
+  if (!tasks) {
+    console.log("Tasks not found");
+  } 
+  if (!categories) {
+    console.log("Categories not found");
+  } 
+
   return (
-    <>
-      <main className="flex flex-col gap-8 p-4 justify-center items-center">
-        <div className="flex flex-col justify-center items-center text-center gap-4">
-          <h2 className="font-medium text-4xl">Go</h2>
-          <p className="text-xs italic">track what{"'"}s important</p>
-        </div>
-        <div className="flex flex-col justify-start items-start gap-8">
-          <Link href="/">Home</Link>
-        </div>
-      </main>
-    </>
+    <main className="flex flex-col gap-8 p-4 justify-center items-center">
+      <Home tasks={tasks} categories={categories} />
+    </main>
   );
 }
