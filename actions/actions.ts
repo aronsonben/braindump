@@ -126,6 +126,27 @@ export async function moveToBacklog(id: number) {
 }
 
 /**
+ * Move a task OUT of the backlog.
+ * @param id task id
+ */
+export async function resumeTask(id: number) {
+  const supabase = await createClient();
+
+  console.log("Moving task out of backlog:", id);
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({ in_backlog: false })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/go");
+}
+
+/**
  * Delete a task.
  * @param id task id
  */
@@ -136,6 +157,63 @@ export async function deleteTask(id: number) {
 
   const { data, error } = await supabase
     .from("tasks")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/go");
+}
+
+/**
+ * Create a new category
+ * @param name task id
+ * @param color category color
+ */
+export async function createCategory(name: string, color: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  console.log("Creating new category:", name);
+
+  const { data, error } = await supabase
+    .from("categories")
+    .insert({ 
+      user_id: user.id, 
+      name: name, 
+      color: color 
+    })
+    .select();
+
+  console.log("Created category:", data);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/go");
+}
+
+/**
+ * Delete a category.
+ * @param id category id
+ */
+export async function deleteCategory(id: number) {
+  const supabase = await createClient();
+
+  console.log("Deleting category:", id);
+
+  const { data, error } = await supabase
+    .from("categories")
     .delete()
     .eq("id", id);
 

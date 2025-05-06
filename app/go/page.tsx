@@ -1,12 +1,11 @@
 import { cache } from 'react'
 import { redirect } from "next/navigation";
 import Link from 'next/link';
-import { getUserData, getTasks, getCategories } from "@/utils/supabase/fetchData";
 import Home from "@/components/home";
 import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
 import { BrainCircuit, FolderOpen, Archive } from "lucide-react";
-
+import { getUserData, getTasks, getCategories } from "@/utils/supabase/fetchData";
 
 const getTasksCached = cache(getTasks);
 const getCategoriesCached = cache(getCategories);
@@ -44,7 +43,7 @@ export default async function Go() {
     <main className="flex flex-col gap-4 p-4 justify-center items-center">
       <div className="flex gap-4">
         <Link href="/braindump">
-          <Button className="flex items-center gap-2">
+          <Button variant="outline"  className="flex items-center gap-2">
             <BrainCircuit className="h-5 w-5" />
             New Brain Dump
           </Button>

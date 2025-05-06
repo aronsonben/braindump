@@ -31,9 +31,6 @@ export default function Home({ tasks, categories }: HomeProps) {
           />
         )}
       </div>
-      <div className="flex flex-col justify-start items-start gap-8">
-        <Link href="/">Home</Link>
-      </div>
     </div>
   );
 }

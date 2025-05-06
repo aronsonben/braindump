@@ -38,7 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { changePriority, changeCategory, moveToBacklog, deleteTask } from '@/actions/actions';
+import { changePriority, changeCategory, moveToBacklog, resumeTask, deleteTask } from '@/actions/actions';
 import { Task, PriorityLevel, Category } from "@/lib/interface";
 import { Flag, Archive, FolderOpen, Trash2, GripVertical } from "lucide-react";
 // import { differenceInDays } from "date-fns";
@@ -48,6 +48,7 @@ interface TaskListProps {
   categories: Category[];
   showAge?: boolean;
   showBacklogButton?: boolean;
+  showResumeButton?: boolean;
 }
 
 interface SortableTableRowProps {
@@ -83,7 +84,7 @@ function SortableTableRow({ task, children, ...props }: SortableTableRowProps) {
   );
 }
 
-export function TaskList({ tasks, categories, showAge = true, showBacklogButton = true }: TaskListProps) {
+export function TaskList({ tasks, categories, showAge = true, showBacklogButton = true, showResumeButton = false }: TaskListProps) {
   const { toast } = useToast();
 
   useEffect(() => {
@@ -149,27 +150,48 @@ export function TaskList({ tasks, categories, showAge = true, showBacklogButton 
   };
 
   const handleMoveToBacklog = (id: number) => {
-    console.log(`Moving task ${id} to backlog`);
-    // backlogMutation.mutate(id);
-  };
-
-  const handleDeleteTask = async (id: number) => {
-    deleteTask(id).then(() => {
-      console.log(`Task ${id} deleted`);
+    moveToBacklog(id)
+      .then(() => {
+        console.log(`Task ${id} moved to backlog`);
         toast({
-          title: "Task deleted",
-          description: "The task has been deleted successfully.",
+          title: "Task moved to backlog",
+          description: "The task has been moved to the backlog successfully.",
           action: <ToastAction altText="Undo">Undo</ToastAction>,
         });
-      }).catch((error) => {
-        console.error("Error deleting task:", error);
+      }
+      ).catch((error) => {
+        console.error("Error moving task to backlog:", error);
         toast({
           title: "Error",
-          description: "Failed to delete the task.",
+          description: "Failed to move the task to the backlog.",
           action: <ToastAction altText="Retry">Retry</ToastAction>,
         });
       }
-    );
+      );
+  };
+
+  const handleResume = (id: number) => {
+    resumeTask(id);
+  };
+
+  const handleDeleteTask = async (id: number) => {
+    deleteTask(id)
+      .then(() => {
+        console.log(`Task ${id} deleted`);
+          toast({
+            title: "Task deleted",
+            description: "The task has been deleted successfully.",
+            action: <ToastAction altText="Undo">Undo</ToastAction>,
+          });
+        }).catch((error) => {
+          console.error("Error deleting task:", error);
+          toast({
+            title: "Error",
+            description: "Failed to delete the task.",
+            action: <ToastAction altText="Retry">Retry</ToastAction>,
+          });
+        }
+      );
   };
 
   return (
@@ -197,7 +219,7 @@ export function TaskList({ tasks, categories, showAge = true, showBacklogButton 
             >
               {tasks.map((task) => {
                 // const daysOld = differenceInDays(new Date(), new Date(task.createdAt));
-                const daysOld = 1;
+                const daysOld = 8;
                 const taskCategory = categories?.find(c => c.id === task.category_id);
 
                 return (
@@ -316,6 +338,18 @@ export function TaskList({ tasks, categories, showAge = true, showBacklogButton 
                               >
                                 <Archive className="h-3 w-3 mr-1" />
                                 Backlog
+                              </Button>
+                            )}
+                            {showResumeButton && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleResume(task.id)}
+                                className="h-6 text-xs py-0 text-muted-foreground hover:bg-muted"
+                                title="Move to backlog"
+                              >
+                                <Archive className="h-3 w-3 mr-1" />
+                                Resume
                               </Button>
                             )}
                           </div>
