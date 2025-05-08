@@ -195,7 +195,7 @@ export function TaskList({ tasks, categories, showAge = true, showBacklogButton 
   };
 
   return (
-    <div className="border rounded-lg bg-white shadow-sm">
+    <div className="border rounded-lg bg-primary shadow-sm">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

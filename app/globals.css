@@ -51,44 +51,90 @@
   --font-mono: var(--font-geist-mono);
 }
 
+.dark {
+  --background: 40 20% 15%;
+  --foreground: 40 15% 90%;
+  
+  /* Slightly Lighter Brown */
+  --card: 35 15% 20%;
+  --card-foreground: 40 15% 90%;
+  
+  --popover: 35 15% 20%;
+  --popover-foreground: 40 15% 90%;
+  
+  /* Warmer Terracotta */
+  --primary: 22 55% 55%;
+  --primary-foreground: 20 10% 15%;
+  
+  /* Deeper Sage */
+  --secondary: 120 20% 40%;
+  --secondary-foreground: 40 15% 90%;
+  
+  /* Dark Taupe */
+  --muted: 30 15% 30%;
+  --muted-foreground: 30 15% 75%;
+  
+  /* Rich Amber */
+  --accent: 35 65% 50%;
+  --accent-foreground: 20 10% 15%;
+  
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+  
+  --border: 30 15% 30%;
+  --input: 30 15% 30%;
+  --ring: 22 55% 55%;
+  
+  /* Priority Colors */
+  --deep-rust: 10 60% 50%;       /* High */
+  --burnt-orange: 25 65% 45%;    /* Medium-High */
+  --amber: 35 65% 50%;           /* Medium */
+  --olive-green: 80 25% 40%;     /* Medium-Low */
+  --sage-green: 120 20% 40%;     /* Low */
+}
+
+/* Keep the media query for system preference, but make it apply the dark class */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: 40 30% 96%;
-    --foreground: 20 10% 20%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 20 10% 20%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 20 10% 20%;
-
-    --primary: 22 60% 45%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 120 15% 60%;
-    --secondary-foreground: 20 10% 20%;
-
-    --muted: 30 15% 85%;
-    --muted-foreground: 20 10% 40%;
-
-    --accent: 35 70% 60%;
-    --accent-foreground: 20 10% 20%;
-
+  :root.system {
+    --background: 40 20% 15%;
+    --foreground: 40 15% 90%;
+    
+    /* Slightly Lighter Brown */
+    --card: 35 15% 20%;
+    --card-foreground: 40 15% 90%;
+    
+    --popover: 35 15% 20%;
+    --popover-foreground: 40 15% 90%;
+    
+    /* Warmer Terracotta */
+    --primary: 22 55% 55%;
+    --primary-foreground: 20 10% 15%;
+    
+    /* Deeper Sage */
+    --secondary: 120 20% 40%;
+    --secondary-foreground: 40 15% 90%;
+    
+    /* Dark Taupe */
+    --muted: 30 15% 30%;
+    --muted-foreground: 30 15% 75%;
+    
+    /* Rich Amber */
+    --accent: 35 65% 50%;
+    --accent-foreground: 20 10% 15%;
+    
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
-
-    --border: 30 15% 85%;
-    --input: 30 15% 85%;
-    --ring: 22 60% 45%;
-
-    --radius: 0.5rem;
-
+    
+    --border: 30 15% 30%;
+    --input: 30 15% 30%;
+    --ring: 22 55% 55%;
+    
     /* Priority Colors */
-    --deep-rust: 10 65% 45%;       /* High */
-    --burnt-orange: 25 70% 50%;    /* Medium-High */
-    --amber: 35 70% 60%;           /* Medium */
-    --olive-green: 80 25% 55%;     /* Medium-Low */
-    --sage-green: 120 15% 60%;     /* Low */
+    --deep-rust: 10 60% 50%;       /* High */
+    --burnt-orange: 25 65% 45%;    /* Medium-High */
+    --amber: 35 65% 50%;           /* Medium */
+    --olive-green: 80 25% 40%;     /* Medium-Low */
+    --sage-green: 120 20% 40%;     /* Low */
   }
 }
 
