@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { Profile, Task, Category } from "@/lib/interface"
+import { Profile, Task, Category, UserPreferences } from "@/lib/interface"
 // import { SupabaseClient } from "@supabase/supabase-js";
 
 export const getUserData = async (userName?: string) => {
@@ -40,6 +40,23 @@ export const getUserProfile = async (user_id: string) => {
   return profile as Profile;
 }
 
+export const getUserPreferences = async (user_id: string) => {
+  const supabase = await createClient();
+
+  // Fetch user preferences from the user_preferences table
+  const { data: preferences, error: preferencesError } = await supabase
+    .from("user_preferences")
+    .select("*")
+    .eq("user_id", user_id)
+    .single();
+
+  if (preferencesError) {
+    throw new Error(preferencesError.message);
+  }
+
+  return preferences as UserPreferences;
+}
+
 export const getTasks = async (user_id: string) => {
   const supabase = await createClient();
 
@@ -53,6 +70,69 @@ export const getTasks = async (user_id: string) => {
   }
 
   return tasks as Task[];
+};
+
+export const getTasksNeedingReminders = async (user_id: string) => {
+  const supabase = await createClient();
+  
+  // Get user preferences
+  const preferences = await getUserPreferences(user_id);
+  
+  if (!preferences || !preferences.enable_reminders) {
+    return []; // Reminders are disabled or preferences not found
+  }
+
+  const now = new Date();
+  const reminderThresholdDate = new Date();
+  reminderThresholdDate.setDate(reminderThresholdDate.getDate() - preferences.reminder_threshold);
+  
+  // Get tasks that meet the basic criteria
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("user_id", user_id)
+    .eq("in_backlog", false)
+    .eq("completed", false)
+    .lte("created_at", reminderThresholdDate.toISOString());
+
+  if (error) {
+    console.error("Error fetching tasks for reminders:", error);
+    throw new Error(error.message);
+  }
+
+  if (!tasks || tasks.length === 0) {
+    return [];
+  }
+
+  // Filter tasks by priority level
+  const priorityLevels = preferences.priority_levels_to_remind as string[];
+  const filteredByPriority = tasks.filter(task => 
+    priorityLevels.includes(task.priority)
+  );
+
+  // Further filter tasks based on last_reminded and reminder_frequency
+  const filteredByDate = filteredByPriority.filter(task => {
+    // If never reminded, include it
+    if (!task.last_reminded) {
+      return true;
+    }
+
+    // Check if enough time has passed since last reminder based on frequency
+    const lastRemindedDate = new Date(task.last_reminded);
+    const daysSinceLastReminder = Math.floor(
+      (now.getTime() - lastRemindedDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    
+    if (preferences.reminder_frequency === 'daily') {
+      return daysSinceLastReminder >= 1;
+    } else if (preferences.reminder_frequency === 'weekly') {
+      return daysSinceLastReminder >= 7;
+    }
+    
+    return true; // Default to including the task
+  });
+
+  return filteredByDate;
 };
 
 export const getCategories = async (user_id: string) => {

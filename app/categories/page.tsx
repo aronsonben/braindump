@@ -1,6 +1,5 @@
 import { cache } from 'react'
 import { redirect } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
 import Categories from "@/components/categories";
 import { getUserData, getTasks, getCategories } from "@/utils/supabase/fetchData";
 

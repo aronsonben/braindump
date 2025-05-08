@@ -45,3 +45,12 @@ export const PriorityLevel = {
   LOW: 'low',
 } as const;
 export type PriorityLevel = typeof PriorityLevel[keyof typeof PriorityLevel];
+
+export interface UserPreferences {
+  id: string;
+  user_id: string;
+  reminder_threshold: number;
+  enable_reminders: boolean;
+  reminder_frequency: string;
+  priority_levels_to_remind: PriorityLevel[];
+}

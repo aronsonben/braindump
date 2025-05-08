@@ -1,7 +1,10 @@
 import type { Config } from "tailwindcss";
 
 export default {
-  content: ["./app/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./app/**/*.{js,jsx,ts,tsx}",
+    "./components/**/*.{js,jsx,ts,tsx}"
+  ],
   theme: {
     extend: {
       borderRadius: {
@@ -60,6 +63,14 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        earth: {
+          DEFAULT: "hsl(var(--deep-rust))",
+          rust: "hsl(var(--deep-rust))",     
+          burnt: "hsl(var(--deep-rust))",
+          amber:"hsl(var(--deep-rust))",
+          olive: "hsl(var(--deep-rust))",
+          sage: "hsl(var(--deep-rust))",
+        }
       },
       keyframes: {
         "accordion-down": {

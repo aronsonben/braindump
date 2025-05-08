@@ -5,10 +5,13 @@ import Home from "@/components/home";
 import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
 import { BrainCircuit, FolderOpen, Archive } from "lucide-react";
-import { getUserData, getTasks, getCategories } from "@/utils/supabase/fetchData";
+import { getUserData, getTasks, getCategories, getUserPreferences, getTasksNeedingReminders } from "@/utils/supabase/fetchData";
 
 const getTasksCached = cache(getTasks);
 const getCategoriesCached = cache(getCategories);
+const getUserPreferencesCached = cache(getUserPreferences);
+const getTasksNeedingRemindersCached = cache(getTasksNeedingReminders);
+
 
 // Learning: considering using parallel data fetching per Next.js docs
 /**
@@ -26,6 +29,8 @@ export default async function Go() {
   const user = await getUserData();
   const tasks = await getTasksCached(user.id);
   const categories = await getCategoriesCached(user.id);
+  const preferences = await getUserPreferencesCached(user.id);
+  const tasksNeedingReminders = await getTasksNeedingRemindersCached(user.id);
 
   if (!user) {
     console.log("User not found");
@@ -37,7 +42,12 @@ export default async function Go() {
   if (!categories) {
     console.log("Categories not found");
   } 
+  if (!preferences) {
+    console.log("Preferences not found");
+  } 
 
+  const showReminders = preferences.enable_reminders;
+  
   return (
     <>
     <main className="flex flex-col gap-4 p-4 justify-center items-center">
@@ -61,7 +71,7 @@ export default async function Go() {
           </Button>
         </Link>
       </div>
-      <Home tasks={tasks} categories={categories} />
+      <Home tasks={tasks} categories={categories} tasksNeedingReminders={tasksNeedingReminders} />
     </main>
     <Toaster />
     </>

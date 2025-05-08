@@ -223,3 +223,72 @@ export async function deleteCategory(id: number) {
 
   revalidatePath("/go");
 }
+
+/**
+ * Update user preferences for reminders
+ * @param preferences object containing user preference settings
+ */
+export async function updatePreferences(
+  preferences: {
+    reminder_threshold: number;
+    enable_reminders: boolean;
+    reminder_frequency: string;
+    priority_levels_to_remind: string[];
+  }
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const { data, error } = await supabase
+    .from("user_preferences")
+    .update({
+      reminder_threshold: preferences.reminder_threshold,
+      enable_reminders: preferences.enable_reminders,
+      reminder_frequency: preferences.reminder_frequency,
+      priority_levels_to_remind: preferences.priority_levels_to_remind,
+    })
+    .eq("user_id", user.id)
+    .select();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Revalidate paths where user preferences might be displayed
+  revalidatePath("/go");
+  revalidatePath("/braindump");
+  revalidatePath("/categories");
+  revalidatePath("/backlog");
+
+  return data;
+}
+
+/**
+ * Mark a task as reminded by updating the last_reminded timestamp
+ * @param taskId task id
+ */
+export async function markTaskAsReminded(taskId: number) {
+  const supabase = await createClient();
+
+  console.log("Marking task as reminded:", taskId);
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({ last_reminded: new Date().toISOString() })
+    .eq("id", taskId)
+    .select();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/go");
+  return data;
+}

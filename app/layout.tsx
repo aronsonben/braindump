@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { ReminderSettings } from "@/components/reminder-settings";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 import HeaderAuth from "@/components/header-auth";
 import Link from "next/link";
 import "./globals.css";
@@ -48,6 +51,13 @@ export default function RootLayout({
                       <ThemeSwitcher />
                     </div>
                   </div>
+                  <ReminderSettings 
+                    trigger={
+                      <Button variant="ghost" size="icon" className="ml-2">
+                        <Settings className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                      </Button>
+                    }
+                  />
                   <HeaderAuth />
                 </div>
               </nav>
