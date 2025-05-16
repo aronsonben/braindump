@@ -1,20 +1,15 @@
-import { signInAction } from "@/app/actions";
+import { signInAction } from "@/actions/auth-actions";
 import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
-// interface SubmitButtonProps {
-//   pendingText: string;
-//   formAction: string | ((formData: FormData) => Promise<void>);
-//   children: React.ReactNode;
-// }
-
 export default async function Login(props: { searchParams: Promise<Message> }) {
   const searchParams = await props.searchParams;
+  console.log("From login: ", searchParams);
   return (
-    <form className="flex-1 flex flex-col min-w-64 p-4">
+    <form className="flex-1 flex flex-col mx-auto min-w-64 p-4">
       <h1 className="text-2xl font-medium">Sign in</h1>
       <p className="text-sm text-foreground">
         Don{"'"}t have an account?{" "}

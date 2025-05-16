@@ -12,13 +12,13 @@ const getCategoriesCached = cache(getCategories);
 
 export default async function Backlog() {
   const user = await getUserData();
-  const tasks = await getTasksCached(user.id);
-  const categories = await getCategoriesCached(user.id);
-
   if (!user) {
     console.log("User not found");
     return redirect("/");
   } 
+
+  const tasks = await getTasksCached(user.id);
+  const categories = await getCategoriesCached(user.id);
   if (!tasks) {
     console.log("Tasks not found");
   } 

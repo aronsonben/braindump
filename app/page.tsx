@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
 
 export default function AppHome() {
   return (
@@ -13,7 +15,9 @@ export default function AppHome() {
           <p className="text-sm">This tool is for you! A work in progress. Sign up to try it out and let me know whatcha think!</p>
         </div>
         <div className="flex flex-col justify-start items-start gap-8">
-          <Link href="/go">Go</Link>
+          <Link href="/backlog">
+            <Button variant="outline" className="flex items-center gap-2">Go</Button>
+          </Link>
         </div>
       </main>
     </>

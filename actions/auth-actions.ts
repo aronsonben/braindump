@@ -41,7 +41,7 @@ export const signUpAction = async (formData: FormData) => {
   } else {
     return encodedRedirect(
       "success",
-      "/",
+      "/go",
       "Thanks for signing up!",
     );
   }
@@ -63,7 +63,7 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
-  return redirect("/");
+  return redirect("/go");
 };
 
 /** Default forgotPasswordAction from supabase-next template */

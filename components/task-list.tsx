@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -34,11 +34,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { differenceInDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { changePriority, changeCategory, moveToBacklog, resumeTask, deleteTask } from '@/actions/actions';
+import { changePriority, changeCategory, moveToBacklog, resumeTask, deleteTask, reorderTasks } from '@/actions/actions';
 import { Task, PriorityLevel, Category } from "@/lib/interface";
 import { Flag, Archive, FolderOpen, Trash2, GripVertical } from "lucide-react";
 // import { differenceInDays } from "date-fns";
@@ -49,6 +50,8 @@ interface TaskListProps {
   showAge?: boolean;
   showBacklogButton?: boolean;
   showResumeButton?: boolean;
+  onSortChange?: (sortBy: string) => void;
+  currentSort?: string;
 }
 
 interface SortableTableRowProps {
@@ -84,13 +87,23 @@ function SortableTableRow({ task, children, ...props }: SortableTableRowProps) {
   );
 }
 
-export function TaskList({ tasks, categories, showAge = true, showBacklogButton = true, showResumeButton = false }: TaskListProps) {
+export function TaskList({ 
+  tasks, 
+  categories, 
+  showAge = true, 
+  showBacklogButton = true, 
+  showResumeButton = false,
+  onSortChange,
+  currentSort = 'position'
+}: TaskListProps) {
   const { toast } = useToast();
+  const [taskList, setTaskList] = useState(tasks);
 
   useEffect(() => {
     // This is a placeholder for any side effects you might want to run when tasks change
     // For example, you could fetch new data or update the UI
     console.log("Tasks updated:", tasks);
+    setTaskList(tasks);
   }, [tasks])
 
   const sensors = useSensors(
@@ -134,9 +147,22 @@ export function TaskList({ tasks, categories, showAge = true, showBacklogButton 
       const [movedTask] = newTasks.splice(oldIndex, 1);
       newTasks.splice(newIndex, 0, movedTask);
 
-      // Use the mutation to reorder tasks
-      // reorderMutation.mutate(newTasks.map((task) => task.id));
-      console.log(`Reordering tasks: ${newTasks.map((task) => task.id).join(", ")}`);
+      // Update the UI immediately for optimistic updates
+      setTaskList(newTasks);
+      
+      try {
+        // Update the database in the background
+        await reorderTasks(newTasks.map((task) => task.id));
+      } catch (error) {
+        // If the update fails, revert to the original order
+        setTaskList(tasks);
+        toast({
+          title: "Error",
+          description: "Failed to reorder tasks. Please try again.",
+          variant: "destructive",
+        });
+        console.error("Error reordering tasks:", error);
+      }
     }
   };
 
@@ -196,6 +222,35 @@ export function TaskList({ tasks, categories, showAge = true, showBacklogButton 
 
   return (
     <div className="border rounded-lg bg-primary shadow-sm">
+      {onSortChange && (
+        <div className="p-2 flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <span>Sort by:</span>
+                {currentSort === 'position' && <span>Manual Order</span>}
+                {currentSort === 'priority' && <span>Priority</span>}
+                {currentSort === 'category' && <span>Category</span>}
+                {currentSort === 'age' && <span>Age</span>}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSortChange('position')}>
+                Manual Order
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange('priority')}>
+                Priority
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange('category')}>
+                Category
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange('age')}>
+                Age
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -214,11 +269,11 @@ export function TaskList({ tasks, categories, showAge = true, showBacklogButton 
           </TableHeader>
           <TableBody>
             <SortableContext
-              items={tasks.map(t => t.id)}
+              items={taskList.map(t => t.id)}
               strategy={verticalListSortingStrategy}
             >
-              {tasks.map((task) => {
-                // const daysOld = differenceInDays(new Date(), new Date(task.createdAt));
+              {taskList.map((task) => {
+                // const daysOld = differenceInDays(new Date(), new Date(task.created_at));
                 const daysOld = 8;
                 const taskCategory = categories?.find(c => c.id === task.category_id);
 
@@ -227,15 +282,19 @@ export function TaskList({ tasks, categories, showAge = true, showBacklogButton 
                     {(attributes, listeners) => (
                       <>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="cursor-grab active:cursor-grabbing h-6 w-6"
-                            {...attributes}
-                            {...listeners}
-                          >
-                            <GripVertical className="h-3 w-3 text-muted-foreground" />
-                          </Button>
+                          {currentSort === 'position' ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="cursor-grab active:cursor-grabbing h-6 w-6"
+                              {...attributes}
+                              {...listeners}
+                            >
+                              <GripVertical className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          ) : (
+                            <div className="h-6 w-6"></div>
+                          )}
                         </TableCell>
                         <TableCell className="font-medium text-foreground">{task.title}</TableCell>
                         {showAge && (

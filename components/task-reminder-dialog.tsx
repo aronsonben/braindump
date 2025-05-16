@@ -27,24 +27,33 @@ interface TaskReminderDialogProps {
 
 export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminderDialogProps) {
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
+  const [tasksLeft, setTasksLeft] = useState(taskList.length);
   const { toast } = useToast();
+
+
+  console.log("TaskReminderDialog: taskList", taskList);
   
+
   // Reset index when dialog opens or taskList change
-  useEffect(() => {
-    if (open) {
-      setCurrentTaskIndex(0);
-    }
-  }, [open, taskList]);
+  // useEffect(() => {
+  //   if (open) {
+  //     setCurrentTaskIndex(0);
+  //   }
+  // }, [open, taskList]);
 
   const currentTask = taskList[currentTaskIndex];
-  const hasMoreTasks = currentTaskIndex < taskList.length - 1;
+  const hasMoreTasks = tasksLeft > 1;
 
   const handleNextTask = () => {
     if (hasMoreTasks) {
-      setCurrentTaskIndex(prev => prev + 1);
-    } else {
+      console.log("There ar emore tasks still")
+      const nextIndex = currentTaskIndex == taskList.length - 1 ? 0 : currentTaskIndex + 1;
+      setCurrentTaskIndex(nextIndex);
       onOpenChange(true);
-    }
+    } 
+    // else {
+    //   onOpenChange(false);
+    // }
   };
 
   const handleCompleteNow = async () => {
@@ -54,8 +63,11 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
       // Mark task as reminded
       await markTaskAsReminded(currentTask.id);
       
-      // Close dialog
-      onOpenChange(false);
+      // Decrease the number of tasks left
+      setTasksLeft(prev => prev - 1);
+
+      // Move to next task or close dialog
+      handleNextTask();
       
       // Show toast
       toast({
@@ -145,10 +157,7 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
     try {
       // Just mark as reminded without other actions
       await markTaskAsReminded(currentTask.id);
-      
-      // Move to next task or close dialog
-      handleNextTask();
-      
+
       toast({
         title: "Reminder dismissed",
         description: "You'll be reminded again later",
@@ -160,6 +169,10 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
         variant: "destructive",
       });
     }
+          
+    // Move to next task or close dialog
+    handleNextTask();
+    
   };
 
   const getPriorityColor = (priority: string) => {
@@ -179,20 +192,20 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
     }
   };
 
-  if (!currentTask) {
-    return (
-      <AlertDialog open={open} onOpenChange={onOpenChange}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Task Reminder</AlertDialogTitle>
-            <AlertDialogDescription>
-              Loading taskList that need attention...
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-        </AlertDialogContent>
-      </AlertDialog>
-    );
-  }
+  // if (!currentTask) {
+  //   return (
+  //     <AlertDialog open={open} onOpenChange={onOpenChange}>
+  //       <AlertDialogContent>
+  //         <AlertDialogHeader>
+  //           <AlertDialogTitle>Task Reminder</AlertDialogTitle>
+  //           <AlertDialogDescription>
+  //             Loading taskList that need attention...
+  //           </AlertDialogDescription>
+  //         </AlertDialogHeader>
+  //       </AlertDialogContent>
+  //     </AlertDialog>
+  //   );
+  // }
 
   if (taskList.length === 0) {
     return (
@@ -227,6 +240,7 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
           </AlertDialogDescription>
         </AlertDialogHeader>
         
+        {/* Task card */}
         <div className="w-full max-w-xl py-4">
           <div className="mb-4 p-4 border rounded-lg bg-gray-50">
             <h3 className="text-lg font-semibold mb-2">{currentTask.title}</h3>
@@ -242,12 +256,44 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
             </div>
           </div>
           
-          <div className="max-w-xl text-sm text-gray-500 mb-2">
+          {/* total tasks to remind about */}
+          <div className="flex max-w-xl text-sm text-gray-500 mb-2">
             {taskList.length > 1 && (
               <Badge variant="outline" className="mb-2">
                 {currentTaskIndex + 1} of {taskList.length} taskList
               </Badge>
             )}
+            {/* arrows to let user navigate through tasks that require reminding */}
+            <div className=" ml-2">
+            {hasMoreTasks ? (
+              <>
+                <span className={`text-gray-500 ${currentTaskIndex === 0 ? "opacity-50 cursor-not-allowed" : ""}`}>
+                  <span
+                    className="cursor-pointer"
+                    onClick={currentTaskIndex === 0 ? undefined : handleNextTask}
+                    tabIndex={currentTaskIndex === 0 ? -1 : 0}
+                    aria-disabled={currentTaskIndex === 0}
+                  >
+                    {' ← '}
+                  </span>
+                </span>
+                <span className={`text-gray-500 ${currentTaskIndex === taskList.length - 1 ? "opacity-50 cursor-not-allowed" : ""}`}>
+                  <span
+                    className="cursor-pointer"
+                    onClick={currentTaskIndex === taskList.length - 1 ? undefined : handleNextTask}
+                    tabIndex={currentTaskIndex === taskList.length - 1 ? -1 : 0}
+                    aria-disabled={currentTaskIndex === taskList.length - 1}
+                  >
+                    {' → '}
+                  </span>
+                </span>
+              </>
+            ) : (
+              <span className="text-gray-500">
+                No more tasks needing reminders.
+              </span>
+            )}
+            </div>
           </div>
         </div>
         

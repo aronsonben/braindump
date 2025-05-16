@@ -29,7 +29,7 @@ import { updatePreferences } from "@/actions/actions";
 
 interface ReminderSettingsDialogProps {
   trigger?: React.ReactNode;
-  preferences?: UserPreferences;
+  preferences?: UserPreferences | null;
 }
 
 export function ReminderSettingsDialog({ trigger, preferences }: ReminderSettingsDialogProps) {

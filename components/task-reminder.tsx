@@ -13,16 +13,22 @@ interface TaskReminderProps {
 }
 
 export async function TaskReminder({ open, tasksNeedingReminders = [], onOpenChange }: TaskReminderProps) {
+  const user = await getUserData();
+  if (!user) {
+    console.log("TaskReminder: User not found");
+    return;
+  }
+
   // Only fetch tasks needing reminders when the dialog is open
   // let tasksNeedingReminders: Task[] = [];
-  // if (open) {
-  //   try {
-  //     tasksNeedingReminders = await getTasksNeedingRemindersCached(user.id);
-  //     console.log(`Found ${tasksNeedingReminders.length} tasks needing reminders`);
-  //   } catch (error) {
-  //     console.error("Error fetching tasks needing reminders:", error);
-  //   }
-  // }
+  if (open) {
+    try {
+      tasksNeedingReminders = await getTasksNeedingRemindersCached(user.id);
+      console.log(`Found ${tasksNeedingReminders.length} tasks needing reminders`);
+    } catch (error) {
+      console.error("Error fetching tasks needing reminders:", error);
+    }
+  }
 
   return (
     <TaskReminderDialog 

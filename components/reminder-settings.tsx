@@ -13,15 +13,15 @@ export async function ReminderSettings({ trigger }: ReminderSettingsDialogProps)
   const user = await getUserData();
   
   if (!user) {
-    console.log("User not found");
-    return null;
+    console.log("ReminderSettings: User not found");
+    return;
   } 
   // TODO: only fetch when dialog is open
   const preferences = await getUserPreferencesCached(user.id);
 
   if (!preferences) {
     console.log("Preferences not found");
-  } 
+  }
 
   return (
     <ReminderSettingsDialog trigger={trigger} preferences={preferences} />

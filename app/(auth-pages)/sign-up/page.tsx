@@ -1,4 +1,4 @@
-import { signUpAction } from "@/app/actions";
+import { signUpAction } from "@/actions/auth-actions";
 import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ export default async function Signup(props: {
         <FormMessage message={searchParams} />
       </div>
     );
-  }
+  } 
 
   return (
     <>

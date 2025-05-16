@@ -51,19 +51,43 @@ export const getUserPreferences = async (user_id: string) => {
     .single();
 
   if (preferencesError) {
-    throw new Error(preferencesError.message);
+    // throw new Error(preferencesError.message);
+    return null; // Handle the error as needed
   }
 
   return preferences as UserPreferences;
 }
 
-export const getTasks = async (user_id: string) => {
+export const getTasks = async (user_id: string, sortBy: string = 'position') => {
   const supabase = await createClient();
 
-  const { data: tasks, error } = await supabase
+  let query = supabase
     .from("tasks")
     .select("*")
-    .eq("user_id", user_id);
+    .eq("user_id", user_id)
+    .eq("in_backlog", false)
+    .eq("completed", false);
+    
+  // Apply sorting based on the sortBy parameter
+  switch (sortBy) {
+    case 'position':
+      query = query.order('position', { ascending: true });
+      break;
+    case 'priority':
+      // Custom priority order: high -> medium-high -> medium -> medium-low -> low
+      query = query.order('priority', { ascending: false }); // This is approximate, we'll refine in client
+      break;
+    case 'category':
+      query = query.order('category_id', { ascending: true });
+      break;
+    case 'age':
+      query = query.order('created_at', { ascending: false }); // Newest first
+      break;
+    default:
+      query = query.order('position', { ascending: true });
+  }
+
+  const { data: tasks, error } = await query;
 
   if (error) {
     throw new Error(error.message);
@@ -74,6 +98,8 @@ export const getTasks = async (user_id: string) => {
 
 export const getTasksNeedingReminders = async (user_id: string) => {
   const supabase = await createClient();
+
+  console.log("Fetching tasks needing reminders for user:", user_id);
   
   // Get user preferences
   const preferences = await getUserPreferences(user_id);
@@ -110,6 +136,10 @@ export const getTasksNeedingReminders = async (user_id: string) => {
     priorityLevels.includes(task.priority)
   );
 
+
+  console.log("Found some tasks filtered by priority:", filteredByPriority);
+
+
   // Further filter tasks based on last_reminded and reminder_frequency
   const filteredByDate = filteredByPriority.filter(task => {
     // If never reminded, include it
@@ -123,13 +153,16 @@ export const getTasksNeedingReminders = async (user_id: string) => {
       (now.getTime() - lastRemindedDate.getTime()) / (1000 * 60 * 60 * 24)
     );
     
-    if (preferences.reminder_frequency === 'daily') {
-      return daysSinceLastReminder >= 1;
-    } else if (preferences.reminder_frequency === 'weekly') {
-      return daysSinceLastReminder >= 7;
-    }
+    // TEMP TESTING:
+    return true;
+
+    // if (preferences.reminder_frequency === 'daily') {
+    //   return daysSinceLastReminder >= 1;
+    // } else if (preferences.reminder_frequency === 'weekly') {
+    //   return daysSinceLastReminder >= 7;
+    // }
     
-    return true; // Default to including the task
+    // return true; // Default to including the task
   });
 
   return filteredByDate;

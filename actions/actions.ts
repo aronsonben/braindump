@@ -289,6 +289,73 @@ export async function markTaskAsReminded(taskId: number) {
     throw new Error(error.message);
   }
 
-  revalidatePath("/go");
+  // revalidatePath("/go");
   return data;
+}
+
+/** 
+ * Reorder tasks per drag and drop
+ * @param newOrder list of task ids in new order
+ */
+export async function reorderTasks(newOrder: number[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Update each task with its new position
+  for (let i = 0; i < newOrder.length; i++) {
+    const taskId = newOrder[i];
+    const { error } = await supabase
+      .from("tasks")
+      .update({ position: i })
+      .eq("id", taskId);
+      
+    if (error) {
+      throw new Error(`Error updating task ${taskId}: ${error.message}`);
+    }
+  }
+
+  revalidatePath("/go");
+  return newOrder;
+}
+
+/**
+ * Initialize positions for tasks that don't have them set
+ */
+export async function initializeTaskPositions() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Get all tasks without positions or with null positions
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("user_id", user.id)
+    .is("position", null);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Update each task with a position
+  for (let i = 0; i < tasks.length; i++) {
+    const { error } = await supabase
+      .from("tasks")
+      .update({ position: i })
+      .eq("id", tasks[i].id);
+      
+    if (error) {
+      throw new Error(`Error updating task ${tasks[i].id}: ${error.message}`);
+    }
+  }
+
+  revalidatePath("/go");
+  return tasks.length;
 }

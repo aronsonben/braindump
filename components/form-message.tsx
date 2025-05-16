@@ -12,7 +12,7 @@ export function FormMessage({ message }: { message: Message }) {
         </div>
       )}
       {"error" in message && (
-        <div className="border-l-2 border-l-gray-800 dark:border-l-gray-50 px-4">
+        <div className="border-l-2 border-l-gray-800 dark:border-l-gray-50 text-red-500 px-4">
           {message.error.includes("Password") ? 
             ("Password should be at least 8 characters and contain at least one uppercase letter, one lowercase letter, one number.") 
             : message.error}
