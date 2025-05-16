@@ -37,7 +37,7 @@ export default function Home({ tasks, categories, tasksNeedingReminders = [], en
 
   // Apply client-side sorting when sort option changes or tasks update
   useEffect(() => {
-    let newSortedTasks = [...tasks];
+    const newSortedTasks = [...tasks];
     
     switch (sortBy) {
       case 'position':

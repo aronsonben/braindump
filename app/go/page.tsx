@@ -42,6 +42,7 @@ export default async function Go() {
   const categories = await getCategoriesCached(user.id);
   const preferences = await getUserPreferencesCached(user.id);
   const tasksNeedingReminders = await getTasksNeedingRemindersCached(user.id);
+  
   if (!tasks) {
     console.log("Tasks not found");
   } 
