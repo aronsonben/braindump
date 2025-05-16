@@ -153,16 +153,13 @@ export const getTasksNeedingReminders = async (user_id: string) => {
       (now.getTime() - lastRemindedDate.getTime()) / (1000 * 60 * 60 * 24)
     );
     
-    // TEMP TESTING:
-    return true;
-
-    // if (preferences.reminder_frequency === 'daily') {
-    //   return daysSinceLastReminder >= 1;
-    // } else if (preferences.reminder_frequency === 'weekly') {
-    //   return daysSinceLastReminder >= 7;
-    // }
+    if (preferences.reminder_frequency === 'daily') {
+      return daysSinceLastReminder >= 1;
+    } else if (preferences.reminder_frequency === 'weekly') {
+      return daysSinceLastReminder >= 7;
+    }
     
-    // return true; // Default to including the task
+    return true; // Default to including the task
   });
 
   return filteredByDate;

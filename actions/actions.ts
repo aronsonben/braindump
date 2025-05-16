@@ -15,11 +15,13 @@ export async function createTasks(taskList: string[]) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // TODO: handle this error
   if (!user) {
     throw new Error("User not found");
   }
 
   // Rate limiting - limit tasks per request
+  // TODO: need to error handle this
   if (taskList.length > 50) {
     throw new Error("Too many tasks in a single request");
   }
@@ -46,9 +48,10 @@ export async function createTasks(taskList: string[]) {
         in_backlog: false,
         completed: false,
         last_reminded: null,
-      })
-      .select();
+        position: null,
+      });
 
+    // TODO: handle this error
     if (error) {
       throw new Error(error.message);
     }

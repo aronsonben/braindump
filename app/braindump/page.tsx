@@ -16,39 +16,39 @@ export default function BrainDump() {
   const router = useRouter();
 
   const handleSubmit = async () => {
-    const sanitizedTasks = input
+    const newTasks = input
       .split("\n")
-      .map(line => sanitizeTask(line.trim()))
+      .map(line => line.trim())
       .filter(line => line !== null) as string[];
 
-      if (sanitizedTasks.length === 0) {
-        toast({
-          title: "No valid tasks",
-          description: "Please enter at least one valid task",
-          variant: "destructive"
-        });
-        return;
-      }
+    if (newTasks.length === 0) {
+      toast({
+        title: "No valid tasks",
+        description: "Please enter at least one valid task",
+        variant: "destructive"
+      });
+      return;
+    }
 
-      try {
-        console.log("Creating tasks:", sanitizedTasks);
-        createTasks(sanitizedTasks);
-    
-        toast({
-          title: "Brain dump completed!",
-          description: `${sanitizedTasks.length} tasks have been created.`
-        });
-    
-        console.log("back to go");
-        router.push("/go");
-      } catch (error) {
-        console.error("Error creating tasks:", error);
-        toast({
-          title: "Error creating tasks",
-          description: "Please try again",
-          variant: "destructive"
-        });
-      }
+    try {
+      console.log("Creating tasks:", newTasks);
+      await createTasks(newTasks);
+  
+      toast({
+        title: "Brain dump completed!",
+        description: `${newTasks.length} tasks have been created.`
+      });
+  
+      console.log("back to go");
+      router.push("/go");
+    } catch (error) {
+      console.error("Error creating tasks:", error);
+      toast({
+        title: "Error creating tasks",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -70,10 +70,10 @@ export default function BrainDump() {
               className="min-h-[300px] mb-4"
             />
             <div className="flex justify-end gap-4">
-              <Button variant="outline" onClick={() => router.push("/")}>
+              <Button variant="outline" onClick={() => router.push("/go")}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} disabled={!input.trim()}>
+              <Button variant="outline" onClick={handleSubmit} disabled={!input.trim()}>
                 Create Tasks
               </Button>
             </div>

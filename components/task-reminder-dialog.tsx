@@ -50,10 +50,9 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
       const nextIndex = currentTaskIndex == taskList.length - 1 ? 0 : currentTaskIndex + 1;
       setCurrentTaskIndex(nextIndex);
       onOpenChange(true);
-    } 
-    // else {
-    //   onOpenChange(false);
-    // }
+    } else {
+      onOpenChange(false);
+    }
   };
 
   const handleCompleteNow = async () => {

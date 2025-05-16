@@ -221,36 +221,8 @@ export function TaskList({
   };
 
   return (
+    <>
     <div className="border rounded-lg bg-primary shadow-sm">
-      {onSortChange && (
-        <div className="p-2 flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <span>Sort by:</span>
-                {currentSort === 'position' && <span>Manual Order</span>}
-                {currentSort === 'priority' && <span>Priority</span>}
-                {currentSort === 'category' && <span>Category</span>}
-                {currentSort === 'age' && <span>Age</span>}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onSortChange('position')}>
-                Manual Order
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSortChange('priority')}>
-                Priority
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSortChange('category')}>
-                Category
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSortChange('age')}>
-                Age
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -273,8 +245,8 @@ export function TaskList({
               strategy={verticalListSortingStrategy}
             >
               {taskList.map((task) => {
-                // const daysOld = differenceInDays(new Date(), new Date(task.created_at));
-                const daysOld = 8;
+                const daysOld = differenceInDays(new Date(), new Date(task.created_at));
+                // const daysOld = 8;
                 const taskCategory = categories?.find(c => c.id === task.category_id);
 
                 return (
@@ -387,7 +359,7 @@ export function TaskList({
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
-                            {showBacklogButton && daysOld > 7 && (
+                            {showBacklogButton && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -423,5 +395,35 @@ export function TaskList({
         </Table>
       </DndContext>
     </div>
+    {onSortChange && (
+        <div className="p-2 flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <span>Sort by:</span>
+                {currentSort === 'position' && <span>Manual Order</span>}
+                {currentSort === 'priority' && <span>Priority</span>}
+                {currentSort === 'category' && <span>Category</span>}
+                {currentSort === 'age' && <span>Age</span>}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSortChange('position')}>
+                Manual Order
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange('priority')}>
+                Priority
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange('category')}>
+                Category
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange('age')}>
+                Age
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+    </>
   );
 }

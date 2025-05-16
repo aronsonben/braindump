@@ -67,9 +67,9 @@ export default function Home({ tasks, categories, tasksNeedingReminders = [], en
         });
         break;
       case 'age':
-        // Sort by creation date (newest first)
+        // Sort by creation date (oldest first)
         newSortedTasks.sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
         break;
     }
