@@ -19,7 +19,7 @@ export interface Task {
   id: number;
   user_id: string;
   title: string;
-  priority: string;
+  priority: number;
   category_id: number;
   in_backlog: boolean;
   completed: boolean;
@@ -37,6 +37,17 @@ export interface Category {
   created_at: Date;
 }
 
+// From database
+export interface Priority {
+  id: number;
+  name: string;
+  color: string;
+  order: number;
+  user_id: string;
+  created_at: Date;
+}
+
+// Original hard coded values
 export const PriorityLevel = {
   HIGH: 'high',
   MEDIUM_HIGH: 'medium-high',
@@ -52,5 +63,5 @@ export interface UserPreferences {
   reminder_threshold: number;
   enable_reminders: boolean;
   reminder_frequency: string;
-  priority_levels_to_remind: PriorityLevel[];
+  priority_levels_to_remind: number[];
 }

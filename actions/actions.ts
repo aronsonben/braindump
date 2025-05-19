@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Task, PriorityLevel, Category } from "@/lib/interface";
+import { Task, PriorityLevel, Category, Priority } from "@/lib/interface";
 import { createClient } from "@/utils/supabase/server";
 
 /**
@@ -63,14 +63,14 @@ export async function createTasks(taskList: string[]) {
 /**
  * Change the priority level of a given task.
  * @param taskId task id
- * @param priority new priority level
+ * @param priorityId new priority id
  */
-export async function changePriority(taskId: number, priority: string) {
+export async function changePriority(taskId: number, priorityId: number) {
   const supabase = await createClient();
 
   const { data: task, error } = await supabase
     .from("tasks")
-    .update({ priority: priority })
+    .update({ priority: priorityId })
     .eq("id", taskId)
     .select();
 
@@ -170,6 +170,63 @@ export async function deleteTask(id: number) {
   revalidatePath("/go");
 }
 
+
+/**
+ * Mark a task as reminded by updating the last_reminded timestamp
+ * @param taskId task id
+ */
+export async function markTaskAsReminded(taskId: number) {
+  const supabase = await createClient();
+
+  console.log("Marking task as reminded:", taskId);
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({ last_reminded: new Date().toISOString() })
+    .eq("id", taskId)
+    .select();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // revalidatePath("/go");
+  return data;
+}
+
+/** 
+ * Reorder tasks per drag and drop
+ * @param newOrder list of task ids in new order
+ */
+export async function reorderTasks(newOrder: number[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Update each task with its new position
+  for (let i = 0; i < newOrder.length; i++) {
+    const taskId = newOrder[i];
+    const { error } = await supabase
+      .from("tasks")
+      .update({ position: i })
+      .eq("id", taskId);
+      
+    if (error) {
+      throw new Error(`Error updating task ${taskId}: ${error.message}`);
+    }
+  }
+
+  revalidatePath("/go");
+  return newOrder;
+}
+
+/* ************************************************************************ */
+/* ****** CATEGORY FUNCTIONS **************************************** */
+/* ************************************************************************ */
+
 /**
  * Create a new category
  * @param name task id
@@ -227,6 +284,183 @@ export async function deleteCategory(id: number) {
   revalidatePath("/go");
 }
 
+/* ************************************************************************ */
+/* ****** PRIORITY FUNCTIONS **************************************** */
+/* ************************************************************************ */
+
+// export async function getPriorities() {
+//   const supabase = await createClient();
+//   const {
+//     data: { user },
+//   } = await supabase.auth.getUser();
+//   if (!user) {
+//     throw new Error("User not found");
+//   }
+//   const { data, error } = await supabase
+//     .from("priorities")
+//     .select("*")
+//     .eq("user_id", user.id)
+//     .order("order", { ascending: true });
+//   if (error) {
+//     throw new Error(error.message);
+//   }
+//   return data as Priority[];
+// }
+
+/**
+ * Create a new priority
+ * @param name task id
+ * @param color priority color
+ */
+export async function createPriority(name: string, color: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Check if user already has 10 priorities
+  const { count, error: countError } = await supabase
+    .from("priorities")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  if (countError) {
+    throw new Error(countError.message);
+  }
+  if ((count ?? 0) >= 10) {
+    throw new Error("You can only have a maximum of 10 priorities.");
+  }
+
+  console.log("Creating new priority:", name);
+
+  const { data, error } = await supabase
+    .from("priorities")
+    .insert({ 
+      name: name, 
+      color: color,
+      order: 999, // default order
+      user_id: user.id, 
+    })
+    .select();
+
+  console.log("Created priority:", data);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/go");
+  return data;
+}
+
+/**
+ * Delete a priority.
+ * @param id priority id
+ */
+export async function deletePriority(id: number) {
+  const supabase = await createClient();
+
+  console.log("Deleting priority:", id);
+
+  const { data, error } = await supabase
+    .from("priorities")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/go");
+}
+
+
+/**
+ * Reorder priorities per drag and drop
+ * @param newOrder Array of objects: {id, order}
+ */
+export async function reorderPriorities(newOrder: {id: number, order: number}[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Update each priority with its new order
+  for (let i = 0; i < newOrder.length; i++) {
+    const { id, order } = newOrder[i];
+    const { error } = await supabase
+      .from("priorities")
+      .update({ order })
+      .eq("id", id)
+      .eq("user_id", user.id);
+    if (error) {
+      throw new Error(`Error updating priority ${id}: ${error.message}`);
+    }
+  }
+
+  revalidatePath("/go");
+  revalidatePath("/priorities");
+  return newOrder;
+}
+
+/**
+ * Update the name of a priority
+ * @param id priority id
+ * @param name new name
+ */
+export async function updatePriorityName(id: number, name: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const { error } = await supabase
+    .from("priorities")
+    .update({ name })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) {
+    throw new Error(error.message);
+  }
+  revalidatePath("/go");
+  revalidatePath("/priorities");
+}
+
+
+/**
+ * Update the name (title) of a task
+ * @param id task id
+ * @param title new title
+ */
+export async function updateTaskName(id: number, title: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const { error } = await supabase
+    .from("tasks")
+    .update({ title })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) {
+    throw new Error(error.message);
+  }
+  revalidatePath("/go");
+}
+
+
+/* ************************************************************************ */
+/* ****** MISC FUNCTIONS **************************************** */
+/* ************************************************************************ */
+
+
 /**
  * Update user preferences for reminders
  * @param preferences object containing user preference settings
@@ -236,7 +470,7 @@ export async function updatePreferences(
     reminder_threshold: number;
     enable_reminders: boolean;
     reminder_frequency: string;
-    priority_levels_to_remind: string[];
+    priority_levels_to_remind: number[];
   }
 ) {
   const supabase = await createClient();
@@ -271,94 +505,4 @@ export async function updatePreferences(
   revalidatePath("/backlog");
 
   return data;
-}
-
-/**
- * Mark a task as reminded by updating the last_reminded timestamp
- * @param taskId task id
- */
-export async function markTaskAsReminded(taskId: number) {
-  const supabase = await createClient();
-
-  console.log("Marking task as reminded:", taskId);
-
-  const { data, error } = await supabase
-    .from("tasks")
-    .update({ last_reminded: new Date().toISOString() })
-    .eq("id", taskId)
-    .select();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  // revalidatePath("/go");
-  return data;
-}
-
-/** 
- * Reorder tasks per drag and drop
- * @param newOrder list of task ids in new order
- */
-export async function reorderTasks(newOrder: number[]) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  // Update each task with its new position
-  for (let i = 0; i < newOrder.length; i++) {
-    const taskId = newOrder[i];
-    const { error } = await supabase
-      .from("tasks")
-      .update({ position: i })
-      .eq("id", taskId);
-      
-    if (error) {
-      throw new Error(`Error updating task ${taskId}: ${error.message}`);
-    }
-  }
-
-  revalidatePath("/go");
-  return newOrder;
-}
-
-/**
- * Initialize positions for tasks that don't have them set
- */
-export async function initializeTaskPositions() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  // Get all tasks without positions or with null positions
-  const { data: tasks, error } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("user_id", user.id)
-    .is("position", null);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  // Update each task with a position
-  for (let i = 0; i < tasks.length; i++) {
-    const { error } = await supabase
-      .from("tasks")
-      .update({ position: i })
-      .eq("id", tasks[i].id);
-      
-    if (error) {
-      throw new Error(`Error updating task ${tasks[i].id}: ${error.message}`);
-    }
-  }
-
-  revalidatePath("/go");
-  return tasks.length;
 }

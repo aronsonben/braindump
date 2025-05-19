@@ -5,20 +5,21 @@ import Home from "@/components/home";
 import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
 import { BrainCircuit, FolderOpen, Archive } from "lucide-react";
-import { getUserData, getTasks, getCategories, getUserPreferences, getTasksNeedingReminders } from "@/utils/supabase/fetchData";
+import { getUserData, getActiveTasks, getCategories, getPriorities, getUserPreferences, getActiveTasksNeedingReminders } from "@/utils/supabase/fetchData";
 
-const getTasksCached = cache(async (userId: string, sortBy: string = 'position') => {
-  return getTasks(userId, sortBy);
+const getActiveTasksCached = cache(async (userId: string, sortBy: string = 'position') => {
+  return getActiveTasks(userId, sortBy);
 });
 const getCategoriesCached = cache(getCategories);
+const getPrioritiesCached = cache(getPriorities);
 const getUserPreferencesCached = cache(getUserPreferences);
-const getTasksNeedingRemindersCached = cache(getTasksNeedingReminders);
+const getActiveTasksNeedingRemindersCached = cache(getActiveTasksNeedingReminders);
 
 
 // Learning: considering using parallel data fetching per Next.js docs
 /**
-async function getTasksParallel(userId: string) {
-  const tasks = await getTasks(userId);
+async function getActiveTasksParallel(userId: string) {
+  const tasks = await getActiveTasks(userId);
   return tasks;
 }
 async function getCategoriesParallel(userId: string) {
@@ -38,16 +39,17 @@ export default async function Go() {
   // const sortBy = typeof searchParams.sort === 'string' ? searchParams.sort : 'position';
   const sortBy = 'position';
   
-  const tasks = await getTasksCached(user.id, sortBy);
+  const tasks = await getActiveTasksCached(user.id, sortBy);
   const categories = await getCategoriesCached(user.id);
+  const priorities = await getPrioritiesCached(user.id);
   const preferences = await getUserPreferencesCached(user.id);
-  const tasksNeedingReminders = await getTasksNeedingRemindersCached(user.id);
+  const tasksNeedingReminders = await getActiveTasksNeedingRemindersCached(user.id);
   
   if (!tasks) {
     console.log("Tasks not found");
   } 
-  if (!categories) {
-    console.log("Categories not found");
+  if (!categories || !priorities) {
+    console.log("Categories or Priorities not found");
   } 
   if (!preferences) {
     console.log("Preferences not found");
@@ -71,6 +73,12 @@ export default async function Go() {
             Categories
           </Button>
         </Link>
+        <Link href="/priorities">
+          <Button variant="outline" className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5" />
+            Priorities
+          </Button>
+        </Link>
         <Link href="/backlog">
           <Button variant="outline" className="flex items-center gap-2">
             <Archive className="h-5 w-5" />
@@ -81,6 +89,7 @@ export default async function Go() {
       <Home 
         tasks={tasks} 
         categories={categories} 
+        priorities={priorities}
         tasksNeedingReminders={tasksNeedingReminders} 
       />
     </main>

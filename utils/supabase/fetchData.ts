@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { Profile, Task, Category, UserPreferences } from "@/lib/interface"
+import { Profile, Task, Category, Priority, UserPreferences } from "@/lib/interface"
 // import { SupabaseClient } from "@supabase/supabase-js";
 
 export const getUserData = async (userName?: string) => {
@@ -58,7 +58,7 @@ export const getUserPreferences = async (user_id: string) => {
   return preferences as UserPreferences;
 }
 
-export const getTasks = async (user_id: string, sortBy: string = 'position') => {
+export const getActiveTasks = async (user_id: string, sortBy: string = 'position') => {
   const supabase = await createClient();
 
   let query = supabase
@@ -96,7 +96,7 @@ export const getTasks = async (user_id: string, sortBy: string = 'position') => 
   return tasks as Task[];
 };
 
-export const getTasksNeedingReminders = async (user_id: string) => {
+export const getActiveTasksNeedingReminders = async (user_id: string) => {
   const supabase = await createClient();
 
   console.log("Fetching tasks needing reminders for user:", user_id);
@@ -131,7 +131,7 @@ export const getTasksNeedingReminders = async (user_id: string) => {
   }
 
   // Filter tasks by priority level
-  const priorityLevels = preferences.priority_levels_to_remind as string[];
+  const priorityLevels = preferences.priority_levels_to_remind as number[];
   const filteredByPriority = tasks.filter(task => 
     priorityLevels.includes(task.priority)
   );
@@ -165,6 +165,44 @@ export const getTasksNeedingReminders = async (user_id: string) => {
   return filteredByDate;
 };
 
+export const getBacklogTasks = async (user_id: string, sortBy: string = 'position') => {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("tasks")
+    .select("*")
+    .eq("user_id", user_id)
+    .eq("in_backlog", true)
+    .eq("completed", false);
+    
+  // Apply sorting based on the sortBy parameter
+  switch (sortBy) {
+    case 'position':
+      query = query.order('position', { ascending: true });
+      break;
+    case 'priority':
+      // Custom priority order: high -> medium-high -> medium -> medium-low -> low
+      query = query.order('priority', { ascending: false }); // This is approximate, we'll refine in client
+      break;
+    case 'category':
+      query = query.order('category_id', { ascending: true });
+      break;
+    case 'age':
+      query = query.order('created_at', { ascending: false }); // Newest first
+      break;
+    default:
+      query = query.order('position', { ascending: true });
+  }
+
+  const { data: tasks, error } = await query;
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return tasks as Task[];
+};
+
 export const getCategories = async (user_id: string) => {
   const supabase = await createClient();
 
@@ -178,6 +216,25 @@ export const getCategories = async (user_id: string) => {
   }
 
   return categories as Category[];
+};
+
+export const getPriorities = async (user_id: string) => {
+  const supabase = await createClient();
+
+  const { data: priorities, error } = await supabase
+    .from("priorities")
+    .select("*")
+    .eq("user_id", user_id)
+    .order("order", { ascending: true })
+    .select();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  console.log("Priorities:", priorities);
+
+  return priorities as Priority[];
 };
 
 

@@ -39,14 +39,16 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { changePriority, changeCategory, moveToBacklog, resumeTask, deleteTask, reorderTasks } from '@/actions/actions';
-import { Task, PriorityLevel, Category } from "@/lib/interface";
+import { changePriority, changeCategory, moveToBacklog, resumeTask, deleteTask, reorderTasks, updateTaskName } from '@/actions/actions';
+import { Task, PriorityLevel, Category, Priority } from "@/lib/interface";
 import { Flag, Archive, FolderOpen, Trash2, GripVertical } from "lucide-react";
-// import { differenceInDays } from "date-fns";
+import { createClient } from "@/utils/supabase/client";
+import { sanitizeTask } from "@/lib/utils";
 
 interface TaskListProps {
   tasks: Task[];
   categories: Category[];
+  priorities: Priority[];
   showAge?: boolean;
   showBacklogButton?: boolean;
   showResumeButton?: boolean;
@@ -90,6 +92,7 @@ function SortableTableRow({ task, children, ...props }: SortableTableRowProps) {
 export function TaskList({ 
   tasks, 
   categories, 
+  priorities,
   showAge = true, 
   showBacklogButton = true, 
   showResumeButton = false,
@@ -98,6 +101,10 @@ export function TaskList({
 }: TaskListProps) {
   const { toast } = useToast();
   const [taskList, setTaskList] = useState(tasks);
+  // Inline editing state
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     // This is a placeholder for any side effects you might want to run when tasks change
@@ -119,21 +126,25 @@ export function TaskList({
     return "text-destructive";
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case PriorityLevel.HIGH:
-        return "text-[hsl(10,65%,45%)]"; // Deep Rust
-      case PriorityLevel.MEDIUM_HIGH:
-        return "text-[hsl(25,70%,50%)]"; // Burnt Orange
-      case PriorityLevel.MEDIUM:
-        return "text-accent"; // Amber
-      case PriorityLevel.MEDIUM_LOW:
-        return "text-[hsl(80,25%,55%)]"; // Olive Green
-      case PriorityLevel.LOW:
-        return "text-secondary"; // Sage Green
-      default:
-        return "text-muted-foreground";
+  const getPriorityName = async (priorityId: number) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("priorities")
+      .select("*")
+      .eq("id", priorityId)
+      .single();
+    if (error) {
+      console.error("Error fetching priority color:", error);
     }
+    if (!error && data) {
+      return data.name;
+    }
+  }
+
+  const getPriorityColor = (priorityId: number) => {
+    const taskPriority = priorities?.find(p => p.id === priorityId);
+    if (!taskPriority) return "text-muted-foreground";
+    return taskPriority.color;
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -166,8 +177,8 @@ export function TaskList({
     }
   };
 
-  const handlePriorityChange = async (id: number, priority: string) => {
-    changePriority(id, priority);
+  const handlePriorityChange = async (id: number, priorityId: number) => {
+    changePriority(id, priorityId);
   };
 
   const handleCategoryChange = (taskId: number, categoryId: number | null) => {
@@ -220,6 +231,46 @@ export function TaskList({
       );
   };
 
+  // Inline edit handlers
+  const handleStartEdit = (id: number, title: string) => {
+    setEditingId(id);
+    setEditingTitle(title);
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingTitle(e.target.value);
+  };
+
+  const handleEditCancel = () => {
+    setEditingId(null);
+    setEditingTitle("");
+  };
+
+  const handleEditSave = async (id: number) => {
+    const trimmed = sanitizeTask(editingTitle);
+    if (!trimmed || taskList.find(t => t.id === id)?.title === trimmed) {
+      handleEditCancel();
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await updateTaskName(id, trimmed);
+      setTaskList(taskList.map(t => t.id === id ? { ...t, title: trimmed } : t));
+      toast({
+        title: "Task updated",
+        description: "Task name has been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating task",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+    setIsSaving(false);
+    handleEditCancel();
+  };
+
   return (
     <>
     <div className="border rounded-lg bg-primary shadow-sm">
@@ -248,6 +299,7 @@ export function TaskList({
                 const daysOld = differenceInDays(new Date(), new Date(task.created_at));
                 // const daysOld = 8;
                 const taskCategory = categories?.find(c => c.id === task.category_id);
+                const taskPriority = priorities?.find(p => p.id === task.priority);
 
                 return (
                   <SortableTableRow key={task.id} task={task}>
@@ -268,13 +320,67 @@ export function TaskList({
                             <div className="h-6 w-6"></div>
                           )}
                         </TableCell>
-                        <TableCell className="font-medium text-foreground">{task.title}</TableCell>
+                        <TableCell className="font-medium text-foreground">
+                          {editingId === task.id ? (
+                            <span className="inline-flex items-center gap-1 w-full">
+                              <input
+                                className="border rounded px-1 py-0.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary max-w-[180px] truncate"
+                                value={editingTitle}
+                                autoFocus
+                                onChange={handleEditChange}
+                                onBlur={handleEditCancel}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") handleEditSave(task.id);
+                                  if (e.key === "Escape") handleEditCancel();
+                                }}
+                                style={{ minWidth: 80 }}
+                                disabled={isSaving}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="p-1"
+                                onMouseDown={e => e.preventDefault()}
+                                onClick={() => handleEditSave(task.id)}
+                                aria-label="Save"
+                                disabled={isSaving}
+                              >
+                                <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 8.5l3 3 5-5"/></svg>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="p-1"
+                                onMouseDown={e => e.preventDefault()}
+                                onClick={handleEditCancel}
+                                aria-label="Cancel"
+                                disabled={isSaving}
+                              >
+                                <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 5l6 6m0-6l-6 6"/></svg>
+                              </Button>
+                            </span>
+                          ) : (
+                            <span
+                              className="cursor-pointer truncate block max-w-full"
+                              tabIndex={0}
+                              onClick={() => handleStartEdit(task.id, task.title)}
+                              onKeyDown={e => {
+                                if (e.key === "Enter" || e.key === " ") handleStartEdit(task.id, task.title);
+                              }}
+                              role="button"
+                              aria-label="Edit task name"
+                              title={task.title}
+                            >
+                              {task.title}
+                            </span>
+                          )}
+                        </TableCell>
                         {showAge && (
                           <TableCell className={`${getAgeColor(daysOld)} font-medium text-xs`}>
                             {daysOld} days
                           </TableCell>
                         )}
-                        <TableCell>
+                        <TableCell id="task-category-cell">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               {taskCategory ? (
@@ -316,35 +422,21 @@ export function TaskList({
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
-                        <TableCell>
+                        <TableCell id="task-priority-cell">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <div className={`font-medium text-xs ${getPriorityColor(task.priority)} cursor-pointer hover:bg-muted/50 rounded px-2 py-1 inline-flex items-center`}>
+                              <div className={`font-medium text-xs cursor-pointer hover:bg-muted/50 rounded px-2 py-1 inline-flex items-center`} style={{ color: getPriorityColor(task.priority) }}>
                                 <Flag className="h-3 w-3 inline-block mr-1" />
-                                {task.priority}
+                                {taskPriority?.name || "No priority"}
                               </div>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start">
-                              <DropdownMenuItem onClick={() => handlePriorityChange(task.id, PriorityLevel.HIGH)}>
-                                <Flag className="h-4 w-4 mr-2 text-[hsl(10,65%,45%)]" />
-                                High Priority
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handlePriorityChange(task.id, PriorityLevel.MEDIUM_HIGH)}>
-                                <Flag className="h-4 w-4 mr-2 text-[hsl(25,70%,50%)]" />
-                                Medium-High Priority
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handlePriorityChange(task.id, PriorityLevel.MEDIUM)}>
-                                <Flag className="h-4 w-4 mr-2 text-accent" />
-                                Medium Priority
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handlePriorityChange(task.id, "medium-low")}>
-                                <Flag className="h-4 w-4 mr-2 text-[hsl(80,25%,55%)]" />
-                                Medium-Low Priority
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handlePriorityChange(task.id, PriorityLevel.LOW)}>
-                                <Flag className="h-4 w-4 mr-2 text-secondary" />
-                                Low Priority
-                              </DropdownMenuItem>
+                              {priorities?.map((priority) => (
+                                <DropdownMenuItem onClick={() => handlePriorityChange(task.id, priority.id)} key={priority.id}>
+                                  <Flag className="h-4 w-4 mr-2" style={{ color: priority.color }}/>
+                                  {priority.name}
+                                </DropdownMenuItem>
+                              ))}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

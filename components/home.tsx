@@ -3,21 +3,20 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { TaskReminder } from "@/components/task-reminder";
 import { TaskReminderDialog } from "@/components/task-reminder-dialog";
 import { TaskList } from "@/components/task-list";
-import { Task, Category } from "@/lib/interface";
-import { initializeTaskPositions } from "@/actions/actions";
+import { Task, Category, Priority } from "@/lib/interface";
 import { useToast } from "@/hooks/use-toast";
 
 interface HomeProps {
   tasks: Task[];
   categories: Category[];
+  priorities: Priority[];
   tasksNeedingReminders?: Task[];
   enableReminders?: boolean;
 }
 
-export default function Home({ tasks, categories, tasksNeedingReminders = [], enableReminders = true }: HomeProps) {
+export default function Home({ tasks, categories, priorities, tasksNeedingReminders = [], enableReminders = true }: HomeProps) {
   const [showReminders, setShowReminders] = useState(false);
   const [sortBy, setSortBy] = useState('position');
   const [sortedTasks, setSortedTasks] = useState(tasks);
@@ -47,15 +46,11 @@ export default function Home({ tasks, categories, tasksNeedingReminders = [], en
         break;
       case 'priority':
         // Sort by priority (custom order)
+        priorities.sort((a, b) => a.order - b.order);
         newSortedTasks.sort((a, b) => {
-          const priorityOrder = {
-            'high': 0,
-            'medium-high': 1,
-            'medium': 2,
-            'medium-low': 3,
-            'low': 4
-          };
-          return priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
+          const priorityA = priorities.find(p => p.id === a.priority)?.order || 0;
+          const priorityB = priorities.find(p => p.id === b.priority)?.order || 0;
+          return priorityA - priorityB;
         });
         break;
       case 'category':
@@ -75,7 +70,7 @@ export default function Home({ tasks, categories, tasksNeedingReminders = [], en
     }
     
     setSortedTasks(newSortedTasks);
-  }, [tasks, sortBy, categories]);
+  }, [tasks, sortBy, categories, priorities]);
 
   const handleSortChange = useCallback((newSortBy: string) => {
     setSortBy(newSortBy);
@@ -86,6 +81,7 @@ export default function Home({ tasks, categories, tasksNeedingReminders = [], en
       <TaskReminderDialog
         open={showReminders}
         taskList={tasksNeedingReminders}
+        priorities={priorities}
         onOpenChange={handleReminderDialogChange}
       />
       <div className="container mx-auto px-4 py-8">
@@ -100,24 +96,13 @@ export default function Home({ tasks, categories, tasksNeedingReminders = [], en
             </Link>
           </div>
         ) : (
-          <>
-            {/* <div className="mb-4 flex justify-end">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleInitializePositions}
-                disabled={initializing}
-              >
-                {initializing ? "Initializing..." : "Initialize Task Positions"}
-              </Button>
-            </div> */}
-            <TaskList 
-              tasks={sortedTasks || []} 
-              categories={categories}
-              onSortChange={handleSortChange}
-              currentSort={sortBy}
-            />
-          </>
+          <TaskList 
+            tasks={sortedTasks || []} 
+            categories={categories}
+            priorities={priorities}
+            onSortChange={handleSortChange}
+            currentSort={sortBy}
+          />
         )}
       </div>
     </div>

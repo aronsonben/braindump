@@ -1,6 +1,5 @@
 import React from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-// import "./styles.css";
 
 const TooltipDemo = () => {
 	return (

@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { TaskList } from "@/components/task-list";
 import { ArrowLeft } from "lucide-react";
 import { Task, Category } from "@/lib/interface";
-import { getUserData, getTasks, getCategories } from "@/utils/supabase/fetchData";
+import { getUserData, getBacklogTasks, getCategories, getPriorities } from "@/utils/supabase/fetchData";
 
-const getTasksCached = cache(getTasks);
+const getBacklogTasksCached = cache(getBacklogTasks);
 const getCategoriesCached = cache(getCategories);
+const getPrioritiesCached = cache(getPriorities);
 
 export default async function Backlog() {
   const user = await getUserData();
@@ -17,17 +18,15 @@ export default async function Backlog() {
     return redirect("/");
   } 
 
-  const tasks = await getTasksCached(user.id);
+  const tasks = await getBacklogTasksCached(user.id);
   const categories = await getCategoriesCached(user.id);
+  const priorities = await getPrioritiesCached(user.id);
   if (!tasks) {
     console.log("Tasks not found");
   } 
   if (!categories) {
     console.log("Categories not found");
   } 
-
-  // Filter tasks to only show those in the backlog
-  const backlogTasks = tasks.filter((task) => task.in_backlog);
 
   return (
     <div className="bg-background">
@@ -52,8 +51,9 @@ export default async function Backlog() {
           </div>
         ) : (
           <TaskList 
-            tasks={backlogTasks || []} 
+            tasks={tasks} 
             categories={categories} 
+            priorities={priorities}
             showBacklogButton={false} 
             showResumeButton={true} 
           />

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { PriorityLevel, type UserPreferences } from "@/lib/interface";
 import {
   Dialog,
   DialogContent,
@@ -26,22 +25,22 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Settings } from "lucide-react";
 import { updatePreferences } from "@/actions/actions";
+import { Priority, type UserPreferences } from "@/lib/interface";
 
 interface ReminderSettingsDialogProps {
   trigger?: React.ReactNode;
   preferences?: UserPreferences | null;
+  priorities: Priority[]
 }
 
-export function ReminderSettingsDialog({ trigger, preferences }: ReminderSettingsDialogProps) {
+export function ReminderSettingsDialog({ trigger, preferences, priorities }: ReminderSettingsDialogProps) {
   const [open, setOpen] = useState(false);
 
   const [reminderThreshold, setReminderThreshold] = useState(7);
   const [enableReminders, setEnableReminders] = useState(true);
   const [reminderFrequency, setReminderFrequency] = useState("daily");
-  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([
-    PriorityLevel.HIGH,
-    PriorityLevel.MEDIUM_HIGH,
-  ]);
+  // TODO: change 
+  const [selectedPriorities, setSelectedPriorities] = useState<number[]>([0, 1]);
 
   const { toast } = useToast();
   // const queryClient = useQueryClient();
@@ -54,7 +53,7 @@ export function ReminderSettingsDialog({ trigger, preferences }: ReminderSetting
       setReminderThreshold(preferences.reminder_threshold);
       setEnableReminders(preferences.enable_reminders);
       setReminderFrequency(preferences.reminder_frequency);
-      setSelectedPriorities(preferences.priority_levels_to_remind as string[]);
+      setSelectedPriorities(preferences.priority_levels_to_remind as number[]);
     }
   }, [preferences]);
 
@@ -82,7 +81,7 @@ export function ReminderSettingsDialog({ trigger, preferences }: ReminderSetting
     }
   };
 
-  const togglePriority = (priority: string) => {
+  const togglePriority = (priority: number) => {
     setSelectedPriorities(prev => {
       if (prev.includes(priority)) {
         return prev.filter(p => p !== priority);
@@ -93,7 +92,6 @@ export function ReminderSettingsDialog({ trigger, preferences }: ReminderSetting
   };
 
   const handleOpenChange = (open: boolean) => {
-    console.log("Dialog open state changed:", open);
     if(open) {
       console.log(preferences);
       console.log("Reminder Threshold:", reminderThreshold);
@@ -174,19 +172,19 @@ export function ReminderSettingsDialog({ trigger, preferences }: ReminderSetting
           <div className="space-y-2">
             <Label>Priority levels to remind about</Label>
             <div className="space-y-2">
-              {Object.values(PriorityLevel).map((priority) => (
-                <div key={priority} className="flex items-center space-x-2">
+              {priorities.map((priority) => (
+                <div key={priority.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={`priority-${priority}`}
-                    checked={selectedPriorities.includes(priority)}
-                    onCheckedChange={() => togglePriority(priority)}
+                    checked={selectedPriorities.includes(priority.order)}
+                    onCheckedChange={() => togglePriority(priority.order)}
                     disabled={!enableReminders}
                   />
                   <Label
                     htmlFor={`priority-${priority}`}
                     className="font-normal"
                   >
-                    {priority}
+                    {priority.name}
                   </Label>
                 </div>
               ))}

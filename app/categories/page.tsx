@@ -1,14 +1,14 @@
 import { cache } from 'react'
 import { redirect } from "next/navigation";
 import Categories from "@/components/categories";
-import { getUserData, getTasks, getCategories } from "@/utils/supabase/fetchData";
+import { getUserData, getActiveTasks, getCategories } from "@/utils/supabase/fetchData";
 
-const getTasksCached = cache(getTasks);
+const getActiveTasksCached = cache(getActiveTasks);
 const getCategoriesCached = cache(getCategories);
 
 export default async function CategoriesPage() {
   const user = await getUserData();
-  const tasks = await getTasksCached(user.id);
+  const tasks = await getActiveTasksCached(user.id);
   const categories = await getCategoriesCached(user.id);
 
   if (!user) {

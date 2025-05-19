@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Task, PriorityLevel } from "@/lib/interface";
 import { differenceInDays } from "date-fns";
 import { Flag, Archive, CheckCircle2 } from "lucide-react";
 import { markTaskAsReminded, changePriority, moveToBacklog } from "@/actions/actions";
@@ -18,14 +17,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Task, Priority } from "@/lib/interface";
 
 interface TaskReminderDialogProps {
   open: boolean;
   taskList: Task[];
+  priorities: Priority[]
   onOpenChange: (open: boolean) => void;
 }
 
-export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminderDialogProps) {
+export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }: TaskReminderDialogProps) {
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
   const [tasksLeft, setTasksLeft] = useState(taskList.length);
   const { toast } = useToast();
@@ -86,28 +87,35 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
     if (!currentTask) return;
     
     try {
-      // Get the next lower priority level
-      let newPriority: string;
-      
-      switch (currentTask.priority) {
-        case PriorityLevel.HIGH:
-          newPriority = PriorityLevel.MEDIUM_HIGH;
-          break;
-        case PriorityLevel.MEDIUM_HIGH:
-          newPriority = PriorityLevel.MEDIUM;
-          break;
-        case PriorityLevel.MEDIUM:
-          newPriority = PriorityLevel.MEDIUM_LOW;
-          break;
-        case PriorityLevel.MEDIUM_LOW:
-          newPriority = PriorityLevel.LOW;
-          break;
-        default:
-          newPriority = PriorityLevel.LOW;
+      // Get the next lower priority level by adding one (which will get a higher order, thus lower priority)
+      const currentPriority = priorities.find(p => p.id === currentTask.priority);
+      if (!currentPriority) {
+        toast({
+          title: "Error",
+          description: "Failed to find current task priority",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get next lowest priority by sorting priorities by order, finding the next highest, or returning the same if there is none
+      let newPriority = priorities
+        .filter(p => p.order > currentPriority.order)
+        .sort((a, b) => a.order - b.order)[0]?.id;
+      if (!newPriority) {
+        toast({
+          title: "Error",
+          description: "You're already at the lowest priority! Want to move to backlog?",
+          variant: "destructive",
+        });
+        newPriority = currentTask.priority; // fallback to current priority
+        // TODO: Add move to backlog option
+
+      } else {
+        // Change priority and mark as reminded
+        await changePriority(currentTask.id, newPriority);
       }
       
-      // Change priority and mark as reminded
-      await changePriority(currentTask.id, newPriority);
       await markTaskAsReminded(currentTask.id);
       
       toast({
@@ -174,21 +182,10 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
     
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case PriorityLevel.HIGH:
-        return "text-red-500";
-      case PriorityLevel.MEDIUM_HIGH:
-        return "text-orange-500";
-      case PriorityLevel.MEDIUM:
-        return "text-yellow-500";
-      case PriorityLevel.MEDIUM_LOW:
-        return "text-blue-500";
-      case PriorityLevel.LOW:
-        return "text-green-500";
-      default:
-        return "text-gray-500";
-    }
+  const getPriorityColor = (priorityId: number) => {
+    const taskPriority = priorities?.find(p => p.id === priorityId);
+    if (!taskPriority) return "text-muted-foreground";
+    return taskPriority.color;
   };
 
   // if (!currentTask) {
@@ -225,6 +222,7 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
   }
 
   const daysOld = differenceInDays(new Date(), new Date(currentTask.created_at));
+  const taskPriority = priorities.find(p => p.id === currentTask.priority);
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -247,7 +245,7 @@ export function TaskReminderDialog({ open, taskList, onOpenChange }: TaskReminde
               <span className="text-sm text-gray-500">Priority:</span>
               <span className={`font-medium ${getPriorityColor(currentTask.priority)}`}>
                 <Flag className="h-4 w-4 inline-block mr-1" />
-                {currentTask.priority}
+                {taskPriority?.name || "No Priority"}
               </span>
             </div>
             <div className="text-sm text-gray-500">
