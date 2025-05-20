@@ -126,21 +126,6 @@ export function TaskList({
     return "text-destructive";
   };
 
-  const getPriorityName = async (priorityId: number) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("priorities")
-      .select("*")
-      .eq("id", priorityId)
-      .single();
-    if (error) {
-      console.error("Error fetching priority color:", error);
-    }
-    if (!error && data) {
-      return data.name;
-    }
-  }
-
   const getPriorityColor = (priorityId: number) => {
     const taskPriority = priorities?.find(p => p.id === priorityId);
     if (!taskPriority) return "text-muted-foreground";
@@ -308,6 +293,7 @@ export function TaskList({
                         <TableCell>
                           {currentSort === 'position' ? (
                             <Button
+                              id="position-handle"
                               variant="ghost"
                               size="icon"
                               className="cursor-grab active:cursor-grabbing h-6 w-6"
@@ -337,6 +323,7 @@ export function TaskList({
                                 disabled={isSaving}
                               />
                               <Button
+                                id="save-button"
                                 variant="ghost"
                                 size="icon"
                                 className="p-1"
@@ -348,6 +335,7 @@ export function TaskList({
                                 <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 8.5l3 3 5-5"/></svg>
                               </Button>
                               <Button
+                                id="cancel-button"
                                 variant="ghost"
                                 size="icon"
                                 className="p-1"
@@ -443,6 +431,7 @@ export function TaskList({
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button
+                              id="delete-button"
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeleteTask(task.id)}

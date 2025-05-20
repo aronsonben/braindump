@@ -35,24 +35,25 @@ export async function createTasks(taskList: string[]) {
     return safePattern.test(trimmed);
   });
 
-  for (const text of validTasks) {
+  for (const [index, text] of validTasks.entries()) {
     console.log("Creating task:", text);
     const { data, error } = await supabase
       .from("tasks")
       .insert({
         user_id: user.id,
         title: text,
-        priority: PriorityLevel.MEDIUM,
+        priority: 2, // default priority ("medium"),
         category_id: null,
         created_at: new Date(),
         in_backlog: false,
         completed: false,
         last_reminded: null,
-        position: null,
+        position: index,
       });
 
     // TODO: handle this error
     if (error) {
+      console.error("Error creating task:", error);
       throw new Error(error.message);
     }
   }

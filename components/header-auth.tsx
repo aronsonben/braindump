@@ -17,7 +17,7 @@ export default async function AuthButton() {
   return user ? (
     <div className="flex items-center gap-4">
       <Link href="/" className="flex items-center gap-2">
-      <AvatarPrimitive.Root 
+      {/* <AvatarPrimitive.Root 
         className="inline-flex items-center justify-center align-middle overflow-hidden select-none w-11 h-11 rounded-full bg-black/30">
         <AvatarPrimitive.Image 
           src=""
@@ -28,7 +28,7 @@ export default async function AuthButton() {
           className="w-full h-full flex items-center justify-center bg-white text-violet-700 text-sm leading-none font-medium">
             A
           </AvatarPrimitive.Fallback>
-      </AvatarPrimitive.Root>
+      </AvatarPrimitive.Root> */}
       </Link>
       <form action={signOutAction}>
         <Button type="submit" variant={"outline"}>

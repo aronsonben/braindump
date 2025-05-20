@@ -37,6 +37,7 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
   // Apply client-side sorting when sort option changes or tasks update
   useEffect(() => {
     const newSortedTasks = [...tasks];
+    console.log("[Home] New Tasks! Time to sort by ", sortBy);
     
     switch (sortBy) {
       case 'position':
@@ -67,6 +68,11 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
         break;
+      default:
+        // Tasks should already be sorted by position from the server
+        // But ensure we're using the position field
+        newSortedTasks.sort((a, b) => (a.position || 0) - (b.position || 0));
+        break;
     }
     
     setSortedTasks(newSortedTasks);
@@ -91,7 +97,7 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
             <p className="text-muted-foreground mb-8">
               Start by creating a new brain dump to add some tasks.
             </p>
-            <Link href="/brain-dump">
+            <Link href="/braindump">
               <Button variant="outline">Create Brain Dump</Button>
             </Link>
           </div>

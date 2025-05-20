@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { redirect } from "next/navigation";
+
 import { ReminderSettingsDialog } from "./reminder-settings-dialog";
 import { getUserData, getPriorities, getUserPreferences } from "@/utils/supabase/fetchData";
 
@@ -12,11 +12,11 @@ interface ReminderSettingsDialogProps {
 
 export async function ReminderSettings({ trigger }: ReminderSettingsDialogProps) {
   const user = await getUserData();
-  
   if (!user) {
     console.log("ReminderSettings: User not found");
     return;
   } 
+
   // TODO: only fetch when dialog is open
   const preferences = await getUserPreferencesCached(user.id);
   const priorities = await getPrioritiesCached(user.id);

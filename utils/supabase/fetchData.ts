@@ -203,9 +203,21 @@ export const getBacklogTasks = async (user_id: string, sortBy: string = 'positio
   return tasks as Task[];
 };
 
+// Fetch all categories for a user, or default categories if none exist
 export const getCategories = async (user_id: string) => {
   const supabase = await createClient();
 
+  // First check if a user is logged in
+   const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Return nothing if no user logged in
+  if (!user) {
+    return [];
+  }
+ 
+  // Try fetching categories for this user from the db
   const { data: categories, error } = await supabase
     .from("categories")
     .select("*")
@@ -215,28 +227,70 @@ export const getCategories = async (user_id: string) => {
     throw new Error(error.message);
   }
 
+  console.log("Fetched categories:", categories);
+
+  // If no priorities are found, return default priorities
+  if (!categories || categories.length === 0) {
+     const { data: defaultCategories, error: defaultError } = await supabase
+      .from("categories")
+      .select("*")
+      .is("user_id", null);
+
+    console.log("Fetched default categories:", defaultCategories);
+    
+    if (defaultError || !defaultCategories) {
+      throw new Error(defaultError.message);
+    }
+
+
+    return defaultCategories as Category[];
+  } 
+
   return categories as Category[];
 };
 
 export const getPriorities = async (user_id: string) => {
   const supabase = await createClient();
 
+  // First check if a user is logged in
+   const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Return nothing if no user logged in
+  if (!user) {
+    return [];
+  }
+
+  // Try fetching priorities for this user from the db
   const { data: priorities, error } = await supabase
     .from("priorities")
     .select("*")
     .eq("user_id", user_id)
-    .order("order", { ascending: true })
-    .select();
+    .order("order", { ascending: true });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  console.log("Priorities:", priorities);
+  // If no priorities are found, return default priorities
+  if (!priorities || priorities.length === 0) {
+     const { data: defaultPriorities, error: defaultError } = await supabase
+      .from("priorities")
+      .select("*")
+      .is("user_id", null)
+      .order("order", { ascending: true })
+      .select();
+    
+    if (defaultError || !defaultPriorities) {
+      throw new Error(defaultError.message);
+    }
 
+    return defaultPriorities as Priority[];
+  } 
+    
   return priorities as Priority[];
-};
-
+}
 
 // export const getUserIdByName = async (username: string) => {
 //   const supabase = await createClient();

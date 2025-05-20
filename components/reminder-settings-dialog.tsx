@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -35,15 +36,11 @@ interface ReminderSettingsDialogProps {
 
 export function ReminderSettingsDialog({ trigger, preferences, priorities }: ReminderSettingsDialogProps) {
   const [open, setOpen] = useState(false);
-
   const [reminderThreshold, setReminderThreshold] = useState(7);
   const [enableReminders, setEnableReminders] = useState(true);
   const [reminderFrequency, setReminderFrequency] = useState("daily");
-  // TODO: change 
   const [selectedPriorities, setSelectedPriorities] = useState<number[]>([0, 1]);
-
   const { toast } = useToast();
-  // const queryClient = useQueryClient();
 
   // Update form state when preferences are loaded
   useEffect(() => {
@@ -56,6 +53,13 @@ export function ReminderSettingsDialog({ trigger, preferences, priorities }: Rem
       setSelectedPriorities(preferences.priority_levels_to_remind as number[]);
     }
   }, [preferences]);
+
+  // TODO: should prob see if there's a better way to do this
+  const pathname = usePathname();
+  if (pathname === "/") {
+    console.log("ReminderSettings: Not on home page");
+    return;
+  }
 
   const handleSave = async () => {
     try {

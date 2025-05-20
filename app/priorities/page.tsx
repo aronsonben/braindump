@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import Priorities from "@/components/priorities";
 import { getUserData, getActiveTasks, getPriorities } from "@/utils/supabase/fetchData";
 
-const getActiveTasksCached = cache(getActiveTasks);
 const getPrioritiesCached = cache(getPriorities);
 
 export default async function PrioritiesPage() {
@@ -15,7 +14,8 @@ export default async function PrioritiesPage() {
     return redirect("/");
   } 
   if (!priorities) {
-    console.log("Categories not found");
+    console.log("Priorities not found");
+    return null;
   } 
 
   return (

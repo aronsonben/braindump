@@ -48,9 +48,12 @@ export default async function Go() {
   if (!tasks) {
     console.log("Tasks not found");
   } 
-  if (!categories || !priorities) {
-    console.log("Categories or Priorities not found");
+  if (!categories) {
+    console.log("Categories not found");
   } 
+  if (!priorities) {
+    console.log("Priorities not found");
+  }
   if (!preferences) {
     console.log("Preferences not found");
   } 
