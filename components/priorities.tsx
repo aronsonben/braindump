@@ -372,19 +372,6 @@ export default function Priorities({ priorities: initialPriorities }: {prioritie
                                   onChange={e => handleColorChange(priority.id, e.target.value)}
                                   onBlur={() => setColorPickerId(null)}
                                 />
-                                {/* Only show color picker for the active row */}
-                                {/* {colorPickerId === priority.id && (
-                                  <input
-                                    id="builtin-color-picker"
-                                    type="color"
-                                    value={priority.color}
-                                    onChange={e => handleColorChange(priority.id, e.target.value)}
-                                    onBlur={() => setColorPickerId(null)}
-                                    autoFocus
-                                    className="absolute left-0 top-0 z-10 border-none bg-transparent p-0 w-8 h-8 cursor-pointer"
-                                    style={{ minWidth: 32, minHeight: 32 }}
-                                  /> 
-                                )} */}
                                 <span className="ml-2 text-xs text-muted-foreground align-middle hidden sm:inline">{priority.color}</span>
                               </div>
                             </TableCell>

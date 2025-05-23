@@ -23,7 +23,7 @@ export const signUpAction = async (formData: FormData) => {
   }
 
   /* Use supabase auth client to create new authorized user */
-  const { error } = await supabase.auth.signUp({
+  const { data: user, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -39,6 +39,21 @@ export const signUpAction = async (formData: FormData) => {
     console.error(error.code + " " + error.message);
     return encodedRedirect("error", "/sign-up", error.message);
   } else {
+    try {
+      // Start a transaction to ensure atomicity
+      const { error: transactionError } = await supabase.rpc('create_default_entries', {
+        user_id: user?.user?.id
+      });
+
+      if (transactionError) {
+        console.error("Transaction Error: ", transactionError.message);
+        return encodedRedirect("error", "/sign-up", "Failed to create default entries.");
+      }
+    } catch (err) {
+      console.error("Unexpected Error: ", err);
+      return encodedRedirect("error", "/sign-up", "An unexpected error occurred.");
+    }
+    
     return encodedRedirect(
       "success",
       "/go",

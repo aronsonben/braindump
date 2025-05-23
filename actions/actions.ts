@@ -285,6 +285,29 @@ export async function deleteCategory(id: number) {
   revalidatePath("/go");
 }
 
+/**
+ * Update the name of a category
+ * @param id category id
+ * @param name new name
+ */
+export async function updateCategoryName(id: number, name: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const { error } = await supabase
+    .from("categories")
+    .update({ name })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) {
+    throw new Error(error.message);
+  }
+  revalidatePath("/go");
+  revalidatePath("/categories");
+}
+
 /* ************************************************************************ */
 /* ****** PRIORITY FUNCTIONS **************************************** */
 /* ************************************************************************ */

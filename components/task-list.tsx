@@ -306,7 +306,7 @@ export function TaskList({
                             <div className="h-6 w-6"></div>
                           )}
                         </TableCell>
-                        <TableCell className="font-medium text-foreground">
+                        <TableCell className="font-medium text-foreground truncate max-w-[200px]" title={task.title}>
                           {editingId === task.id ? (
                             <span className="inline-flex items-center gap-1 w-full">
                               <input
@@ -364,11 +364,11 @@ export function TaskList({
                           )}
                         </TableCell>
                         {showAge && (
-                          <TableCell className={`${getAgeColor(daysOld)} font-medium text-xs`}>
+                          <TableCell className={`${getAgeColor(daysOld)} font-medium text-xs truncate max-w-[100px]`} title={`${daysOld} days`}>
                             {daysOld} days
                           </TableCell>
                         )}
-                        <TableCell id="task-category-cell">
+                        <TableCell id="task-category-cell" className="truncate max-w-[150px]" title={taskCategory?.name || 'No category'}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               {taskCategory ? (
@@ -410,7 +410,7 @@ export function TaskList({
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
-                        <TableCell id="task-priority-cell">
+                        <TableCell id="task-priority-cell" className="truncate max-w-[150px]" title={taskPriority?.name || 'No priority'}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <div className={`font-medium text-xs cursor-pointer hover:bg-muted/50 rounded px-2 py-1 inline-flex items-center`} style={{ color: getPriorityColor(task.priority) }}>

@@ -188,20 +188,20 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
     return taskPriority.color;
   };
 
-  // if (!currentTask) {
-  //   return (
-  //     <AlertDialog open={open} onOpenChange={onOpenChange}>
-  //       <AlertDialogContent>
-  //         <AlertDialogHeader>
-  //           <AlertDialogTitle>Task Reminder</AlertDialogTitle>
-  //           <AlertDialogDescription>
-  //             Loading taskList that need attention...
-  //           </AlertDialogDescription>
-  //         </AlertDialogHeader>
-  //       </AlertDialogContent>
-  //     </AlertDialog>
-  //   );
-  // }
+  if (!currentTask) {
+    return (
+      <AlertDialog open={open} onOpenChange={onOpenChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Task Reminder</AlertDialogTitle>
+            <AlertDialogDescription>
+              Loading taskList that need attention...
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  }
 
   if (taskList.length === 0) {
     return (
