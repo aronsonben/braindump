@@ -433,6 +433,61 @@ export async function updatePriorityName(id: number, name: string) {
   revalidatePath("/priorities");
 }
 
+/**
+ * Get entire priority object by Id
+ * @param id priority id
+ */
+export async function getPriorityById(id: number) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    // TODO: probably handle this error better
+    throw new Error("User not found");
+  }
+  const { data: priority, error } = await supabase
+    .from("priorities")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  
+  return priority;
+}
+
+/**
+ * Get the order level of a priority
+ * @param id priority id
+ */
+export async function getPriorityLevel(id: number) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    // TODO: probably handle this error better
+    throw new Error("User not found");
+  }
+  const { data: order, error } = await supabase
+    .from("priorities")
+    .select("order")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  
+  return order;
+}
+
+
+/* ************************************************************************ */
+/* ****** MISC FUNCTIONS **************************************** */
+/* ************************************************************************ */
+
 
 /**
  * Update the name (title) of a task
@@ -455,12 +510,6 @@ export async function updateTaskName(id: number, title: string) {
   }
   revalidatePath("/go");
 }
-
-
-/* ************************************************************************ */
-/* ****** MISC FUNCTIONS **************************************** */
-/* ************************************************************************ */
-
 
 /**
  * Update user preferences for reminders

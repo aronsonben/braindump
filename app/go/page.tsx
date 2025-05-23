@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Home from "@/components/home";
 import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
-import { BrainCircuit, FolderOpen, Archive } from "lucide-react";
+import { BrainCircuit, FolderOpen, Archive, ChartScatterIcon } from "lucide-react";
 import { getUserData, getActiveTasks, getCategories, getPriorities, getUserPreferences, getActiveTasksNeedingReminders } from "@/utils/supabase/fetchData";
 
 const getActiveTasksCached = cache(async (userId: string, sortBy: string = 'position') => {
@@ -86,6 +86,12 @@ export default async function Go() {
           <Button variant="outline" className="flex items-center gap-2">
             <Archive className="h-5 w-5" />
             Backlog
+          </Button>
+        </Link>
+        <Link href="/matrix">
+          <Button variant="outline" className="flex items-center gap-2">
+            <ChartScatterIcon className="h-5 w-5" />
+            Matrix
           </Button>
         </Link>
       </div>
