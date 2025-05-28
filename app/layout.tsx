@@ -3,9 +3,12 @@ import { ThemeProvider } from "next-themes";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { ReminderSettings } from "@/components/reminder-settings";
 import { Button } from "@/components/ui/button";
+import { Sidebar } from "@/components/ui/sidebar";
 import { Settings } from "lucide-react";
 import HeaderAuth from "@/components/header-auth";
 import Link from "next/link";
+import NavBar from "@/components/navbar";
+import { HamburgerIcon } from "lucide-react";
 import "./globals.css";
 
 // const geistSans = Geist({
@@ -45,6 +48,9 @@ export default function RootLayout({
             <div className="flex-1 w-full flex flex-col justify-between items-center">
               <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
                 <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
+                  {/* <Sidebar>
+                    <HamburgerIcon className="h-6 w-6 text-muted-foreground hover:text-primary" />
+                  </Sidebar> */}
                   <div className="flex gap-4 items-center font-semibold">
                     <Link href={"/"}>🧠braindump💩</Link>
                     <div className="flex items-center gap-2">
@@ -61,10 +67,10 @@ export default function RootLayout({
                   <HeaderAuth />
                 </div>
               </nav>
-              <div className="flex-1 flex flex-col gap-20 max-w-5xl w-full jutsify-center items-center">
+              <div id="layout-container" className="flex-1 flex flex-col gap-20 w-full jutsify-center items-center">
                 {children}
               </div>
-              <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-2">
+              <footer id="footer" className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-2">
                 <p>
                   another{" "}
                   <a

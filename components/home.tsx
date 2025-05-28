@@ -83,7 +83,7 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
   }, []);
 
   return (
-    <div className="bg-background">
+    <div className="w-full bg-background">
       <TaskReminderDialog
         open={showReminders}
         taskList={tasksNeedingReminders}

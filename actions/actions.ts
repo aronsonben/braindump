@@ -579,3 +579,23 @@ export async function updatePreferences(
 
   return data;
 }
+
+/**
+ * Mark a task as completed.
+ * @param id task id
+ */
+export async function completeTask(id: number) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({ completed: true })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/go");
+  return data;
+}

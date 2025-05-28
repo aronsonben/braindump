@@ -62,8 +62,8 @@ export default async function Go() {
   
   return (
     <>
-    <main className="flex flex-col gap-4 p-4 justify-center items-center">
-      <div className="flex gap-4">
+    <main id="main-go-container" className="w-full flex flex-col gap-4 p-4 justify-center items-center">
+      <div id="nav-buttons" className="flex gap-4">
         <Link href="/braindump">
           <Button variant="outline"  className="flex items-center gap-2">
             <BrainCircuit className="h-5 w-5" />

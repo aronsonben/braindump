@@ -39,9 +39,9 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { changePriority, changeCategory, moveToBacklog, resumeTask, deleteTask, reorderTasks, updateTaskName } from '@/actions/actions';
+import { changePriority, changeCategory, moveToBacklog, resumeTask, deleteTask, reorderTasks, updateTaskName, completeTask } from '@/actions/actions';
 import { Task, PriorityLevel, Category, Priority } from "@/lib/interface";
-import { Flag, Archive, FolderOpen, Trash2, GripVertical } from "lucide-react";
+import { Flag, Archive, FolderOpen, Trash2, GripVertical, Check } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { sanitizeTask } from "@/lib/utils";
 
@@ -256,6 +256,24 @@ export function TaskList({
     handleEditCancel();
   };
 
+  // Add handler for marking task as complete
+  const handleCompleteTask = async (id: number) => {
+    try {
+      await completeTask(id);
+      setTaskList(taskList.map(t => t.id === id ? { ...t, completed: true } : t));
+      toast({
+        title: "Task completed",
+        description: "The task has been marked as complete.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error completing task",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
     <div className="border rounded-lg bg-primary shadow-sm">
@@ -431,27 +449,38 @@ export function TaskList({
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button
-                              id="delete-button"
-                              variant="ghost"
+                              id="complete-button"
+                              variant="outline"
                               size="icon"
-                              onClick={() => handleDeleteTask(task.id)}
-                              className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              title="Delete task"
+                              onClick={() => handleCompleteTask(task.id)}
+                              className={`h-6 w-6 text-muted-foreground hover:text-green-600 hover:bg-green-100 ${task.completed ? 'opacity-50 pointer-events-none' : ''}`}
+                              title="Mark as complete"
+                              disabled={task.completed}
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Check className="h-3 w-3" />
                             </Button>
                             {showBacklogButton && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleMoveToBacklog(task.id)}
-                                className="h-6 text-xs py-0 text-muted-foreground hover:bg-muted"
+                                className="h-6 text-xs py-0 text-muted-foreground hover:text-[#575e77] hover:bg-[#e0e3ee]"
                                 title="Move to backlog"
                               >
                                 <Archive className="h-3 w-3 mr-1" />
                                 Backlog
                               </Button>
                             )}
+                            <Button
+                              id="delete-button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="h-6 w-6 text-muted-foreground hover:text-red-600 hover:bg-red-100"
+                              title="Delete task"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                             {showResumeButton && (
                               <Button
                                 variant="outline"
