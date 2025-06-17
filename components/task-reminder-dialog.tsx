@@ -60,7 +60,7 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
       // } else {
       //   setCurrentTaskIndex(next);
       // }
-      let nextIndex = next < 0 ? currentTaskIndex - 1 : currentTaskIndex + 1;
+      const nextIndex = next < 0 ? currentTaskIndex - 1 : currentTaskIndex + 1;
       setCurrentTaskIndex(nextIndex);
       onOpenChange(true);
     } else {

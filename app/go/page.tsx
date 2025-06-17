@@ -63,38 +63,8 @@ export default async function Go() {
   return (
     <>
     <main id="main-go-container" className="w-full flex flex-col gap-4 p-4 justify-center items-center">
-      <div id="nav-buttons" className="flex gap-4">
-        <Link href="/braindump">
-          <Button variant="outline"  className="flex items-center gap-2">
-            <BrainCircuit className="h-5 w-5" />
-            New Brain Dump
-          </Button>
-        </Link>
-        <Link href="/categories">
-          <Button variant="outline" className="flex items-center gap-2">
-            <FolderOpen className="h-5 w-5" />
-            Categories
-          </Button>
-        </Link>
-        <Link href="/priorities">
-          <Button variant="outline" className="flex items-center gap-2">
-            <FolderOpen className="h-5 w-5" />
-            Priorities
-          </Button>
-        </Link>
-        <Link href="/backlog">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Archive className="h-5 w-5" />
-            Backlog
-          </Button>
-        </Link>
-        <Link href="/matrix">
-          <Button variant="outline" className="flex items-center gap-2">
-            <ChartScatterIcon className="h-5 w-5" />
-            Matrix
-          </Button>
-        </Link>
-      </div>
+      
+      
       <Home 
         tasks={tasks} 
         categories={categories} 

@@ -3,12 +3,18 @@ import { ThemeProvider } from "next-themes";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { ReminderSettings } from "@/components/reminder-settings";
 import { Button } from "@/components/ui/button";
-import { Sidebar } from "@/components/ui/sidebar";
-import { Settings } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarTitle,
+  SidebarTrigger,
+  SidebarClose
+} from "@/components/ui/sidebar";
+import { Archive, BrainCircuit, ChartScatterIcon, FolderOpen, Settings, X, Menu, Home } from "lucide-react";
 import HeaderAuth from "@/components/header-auth";
 import Link from "next/link";
 import NavBar from "@/components/navbar";
-import { HamburgerIcon } from "lucide-react";
 import "./globals.css";
 
 // const geistSans = Geist({
@@ -48,9 +54,57 @@ export default function RootLayout({
             <div className="flex-1 w-full flex flex-col justify-between items-center">
               <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
                 <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-                  {/* <Sidebar>
-                    <HamburgerIcon className="h-6 w-6 text-muted-foreground hover:text-primary" />
-                  </Sidebar> */}
+                  <Sidebar>
+                    <SidebarTrigger>
+                      <Menu className="cursor-pointer h-6 w-6 text-muted-foreground hover:text-primary" />
+                    </SidebarTrigger>
+                    <SidebarContent>
+                      <div className="w-full p-6 pb-1 flex justify-between items-center">
+                        <SidebarTitle>braindump</SidebarTitle>
+                        <SidebarClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                          <X className="h-4 w-4 cursor-pointer" />
+                        </SidebarClose>
+                      </div>
+                      <div className="flex flex-col">
+                        <Link href="/go">
+                          <Button variant="ghost" className="w-full justify-start px-4 py-3 cursor-pointer rounded-none text-base font-normal hover:bg-accent border-t-1 border-t-black hover:bg-amber-400 transition-colors">
+                            <Home className="h-5 w-5 mr-3" />
+                            Home
+                          </Button>
+                        </Link>
+                        <Link href="/braindump">
+                          <Button variant="ghost" className="w-full justify-start px-4 py-3 cursor-pointer rounded-none text-base font-normal hover:bg-accent border-t-1 border-t-black hover:bg-amber-400 transition-colors">
+                            <BrainCircuit className="h-5 w-5 mr-3" />
+                            New Brain Dump
+                          </Button>
+                        </Link>
+                        <Link href="/categories">
+                          <Button variant="ghost" className="w-full justify-start px-4 py-3 cursor-pointer rounded-none text-base font-normal hover:bg-accent border-t-1 border-t-black hover:bg-amber-400 transition-colors">
+                            <FolderOpen className="h-5 w-5 mr-3" />
+                            Categories
+                          </Button>
+                        </Link>
+                        <Link href="/priorities">
+                          <Button variant="ghost" className="w-full justify-start px-4 py-3 cursor-pointer rounded-none text-base font-normal hover:bg-accent border-t-1 border-t-black hover:bg-amber-400 transition-colors">
+                            <FolderOpen className="h-5 w-5 mr-3" />
+                            Priorities
+                          </Button>
+                        </Link>
+                        <Link href="/backlog">
+                          <Button variant="ghost" className="w-full justify-start px-4 py-3 cursor-pointer rounded-none text-base font-normal hover:bg-accent border-t-1 border-t-black hover:bg-amber-400 transition-colors">
+                            <Archive className="h-5 w-5 mr-3" />
+                            Backlog
+                          </Button>
+                        </Link>
+                        <Link href="/matrix">
+                          <Button variant="ghost" className="w-full justify-start px-4 py-3 cursor-pointer rounded-none text-base font-normal hover:bg-accent border-y-1 border-y-black hover:bg-amber-400 transition-colors">
+                            <ChartScatterIcon className="h-5 w-5 mr-3" />
+                            Matrix
+                          </Button>
+                        </Link>
+                      </div>
+                    </SidebarContent>
+                  </Sidebar>
                   <div className="flex gap-4 items-center font-semibold">
                     <Link href={"/"}>🧠braindump💩</Link>
                     <div className="flex items-center gap-2">
