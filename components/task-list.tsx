@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "./ui/checkbox";
 import { differenceInDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";

@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@theme {
+  --color-beige: hsl(40 30% 96%)
+  --color-beigeoff: hsl(39 44% 91%);
+  --color-cream: hsl(40, 30%, 96%);
+  --color-deep-rust: hsl(10, 65%, 45%);   
+  --color-burnt-orange: hsl(25, 70%, 50%);
+  --color-amberr: hsl(46.69 100% 38.52%);       
+  --color-olive-green: hsl(80, 25%, 55%); 
+  --color-sage-green: hsl(12,0 15,% 60)%; 
+  --color-lavendar: #7f708e;
+}
 :root {
   /* Cream */
   --background: 40 30% 96%;

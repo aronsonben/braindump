@@ -35,6 +35,17 @@ export async function createTasks(taskList: string[]) {
     return safePattern.test(trimmed);
   });
 
+  // Get the current max position for the user's tasks
+  const { data: maxPosData, error: maxPosError } = await supabase
+    .from("tasks")
+    .select("position")
+    .eq("user_id", user.id)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let startPosition = (maxPosData?.position ?? -1) + 1;
+
   for (const [index, text] of validTasks.entries()) {
     console.log("Creating task:", text);
     const { data, error } = await supabase
@@ -48,7 +59,7 @@ export async function createTasks(taskList: string[]) {
         in_backlog: false,
         completed: false,
         last_reminded: null,
-        position: index,
+        position: startPosition + index,
       });
 
     // TODO: handle this error
@@ -504,6 +515,32 @@ export async function getPriorityLevel(id: number) {
   }
   
   return order;
+}
+
+/**
+ * Get the color of a priority
+ * @param id priority id
+ */
+export async function getPriorityColor(id: number) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    // TODO: probably handle this error better
+    throw new Error("User not found");
+  }
+  const { data: color, error } = await supabase
+    .from("priorities")
+    .select("color")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
+    .overrideTypes<{ color: string }>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  
+  return color;
 }
 
 

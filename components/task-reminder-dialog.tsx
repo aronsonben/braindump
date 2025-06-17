@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { differenceInDays } from "date-fns";
-import { Flag, Archive, CheckCircle2 } from "lucide-react";
-import { markTaskAsReminded, changePriority, moveToBacklog } from "@/actions/actions";
+import { Flag, Archive, CheckCircle2, MoveRight, MoveLeft, XCircle } from "lucide-react";
+import { markTaskAsReminded, moveToBacklog, changePriority, getPriorityColor } from "@/actions/actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,10 +45,22 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
   const currentTask = taskList[currentTaskIndex];
   const hasMoreTasks = tasksLeft > 1;
 
-  const handleNextTask = () => {
+  const handleNextTask = (next: number) => {
     if (hasMoreTasks) {
-      console.log("There ar emore tasks still")
-      const nextIndex = currentTaskIndex == taskList.length - 1 ? 0 : currentTaskIndex + 1;
+      console.log("There are more tasks still");
+
+      // if next is at end of list, reset to 0
+      // if next is > current, increase index
+      // if next is < current, decrease index
+      // if next is undefined, increase index
+      // if (next >= taskList.length - 1) {
+      //   setCurrentTaskIndex(0);
+      // } else if (next <= 0) {
+      //   setCurrentTaskIndex(taskList.length - 1);
+      // } else {
+      //   setCurrentTaskIndex(next);
+      // }
+      let nextIndex = next < 0 ? currentTaskIndex - 1 : currentTaskIndex + 1;
       setCurrentTaskIndex(nextIndex);
       onOpenChange(true);
     } else {
@@ -67,7 +79,7 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
       setTasksLeft(prev => prev - 1);
 
       // Move to next task or close dialog
-      handleNextTask();
+      handleNextTask(1);
       
       // Show toast
       toast({
@@ -124,7 +136,7 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
       });
       
       // Move to next task or close dialog
-      handleNextTask();
+      handleNextTask(1);
     } catch (error) {
       toast({
         title: "Error",
@@ -148,7 +160,7 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
       });
       
       // Move to next task or close dialog
-      handleNextTask();
+      handleNextTask(1);
     } catch (error) {
       toast({
         title: "Error",
@@ -178,14 +190,19 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
     }
           
     // Move to next task or close dialog
-    handleNextTask();
+    handleNextTask(1);
     
   };
 
-  const getPriorityColor = (priorityId: number) => {
-    const taskPriority = priorities?.find(p => p.id === priorityId);
-    if (!taskPriority) return "text-muted-foreground";
-    return taskPriority.color;
+  const findPriorityColor = async (priorityId: number) => {
+    try {
+      const priorityColor = await getPriorityColor(priorityId);
+      console.log("FOUND priority color: ", priorityColor);
+      return priorityColor;
+    } catch (error) {
+      console.error("Error fetching priority color.");
+      return "text-muted-foreground";
+    }
   };
 
   if (!currentTask) {
@@ -223,6 +240,8 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
 
   const daysOld = differenceInDays(new Date(), new Date(currentTask.created_at));
   const taskPriority = priorities.find(p => p.id === currentTask.priority);
+  const taskPriorityColor = priorities.find(p => p.id === currentTask.priority)?.color;
+  console.log("Just looked for priority color, this what we found: ", taskPriorityColor);
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -230,20 +249,20 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
         <AlertDialogHeader>
           <AlertDialogTitle>
             <span>Task Reminder</span>
-            <span onClick={() => onOpenChange(false)} className="cursor-pointer underline">X</span>  
+            <span onClick={() => onOpenChange(false)} className="cursor-pointer underline"><XCircle className="hover:fill-amber-100 hover:stroke-amber-900"/></span>  
           </AlertDialogTitle>
           <AlertDialogDescription>
-            This task has been on your list for {daysOld} days. Do you still want to complete it?
+            This task has been on your list for <b>{daysOld} days</b>. Do you still want to complete it?
           </AlertDialogDescription>
         </AlertDialogHeader>
         
         {/* Task card */}
-        <div className="w-full max-w-xl py-4">
+        <div className="w-full max-w-full">
           <div className="mb-4 p-4 border rounded-lg bg-gray-50">
             <h3 className="text-lg font-semibold mb-2">{currentTask.title}</h3>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-sm text-gray-500">Priority:</span>
-              <span className={`font-medium ${getPriorityColor(currentTask.priority)}`}>
+              <span className="font-medium" style={{ color: taskPriorityColor }}>
                 <Flag className="h-4 w-4 inline-block mr-1" />
                 {taskPriority?.name || "No Priority"}
               </span>
@@ -254,42 +273,49 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
           </div>
           
           {/* total tasks to remind about */}
-          <div className="flex max-w-xl text-sm text-gray-500 mb-2">
-            {taskList.length > 1 && (
-              <Badge variant="outline" className="mb-2">
-                {currentTaskIndex + 1} of {taskList.length} taskList
+          <div className="w-full flex justify-between items-center mb-2">
+            <div className="flex items-center max-w-full text-sm text-gray-500">
+              {/* arrows to let user navigate through tasks that require reminding */}
+              <div className=" ml-2">
+              {hasMoreTasks ? (
+                <>
+                  <span className={`text-gray-600 px-1 py-0.5 mr-2 rounded border border-gray-500 ${currentTaskIndex === 0 ? "opacity-50 cursor-not-allowed bg-gray-300" : "bg-beige hover:bg-beigeoff cursor-pointer"}`}>
+                    <span
+                      className=""
+                      onClick={currentTaskIndex === 0 ? undefined : () => handleNextTask(-1)}
+                      tabIndex={currentTaskIndex === 0 ? -1 : 0}
+                      aria-disabled={currentTaskIndex === 0}
+                    >
+                      <MoveLeft className="h-4 w-4 inline-block" />
+                    </span>
+                  </span>
+                  {taskList.length > 1 && (
+                    <Badge variant="outline" className="">
+                      {currentTaskIndex + 1} of {taskList.length} taskList
+                    </Badge>
+                  )}
+                  <span className={`text-gray-500 px-1 py-0.5 ml-2 rounded border border-gray-500 ${currentTaskIndex === taskList.length - 1 ? "opacity-50 cursor-not-allowed bg-gray-300" : "bg-beige hover:bg-beigeoff cursor-pointer"}`}>
+                    <span
+                      className=""
+                      onClick={currentTaskIndex === taskList.length - 1 ? undefined : () => handleNextTask(1)}
+                      tabIndex={currentTaskIndex === taskList.length - 1 ? -1 : 0}
+                      aria-disabled={currentTaskIndex === taskList.length - 1}
+                    >
+                      <MoveRight className="h-4 w-4 inline-block" />
+                    </span>
+                  </span>
+                </>
+              ) : (
+                <span className="text-gray-500">
+                  No more tasks needing reminders.
+                </span>
+              )}
+              </div>
+            </div>
+            <div>
+              <Badge onClick={() => onOpenChange(false)} variant="outline" className="cursor-pointer hover:bg-amber-100 hover:text-amber-900">
+                Ignore All
               </Badge>
-            )}
-            {/* arrows to let user navigate through tasks that require reminding */}
-            <div className=" ml-2">
-            {hasMoreTasks ? (
-              <>
-                <span className={`text-gray-500 ${currentTaskIndex === 0 ? "opacity-50 cursor-not-allowed" : ""}`}>
-                  <span
-                    className="cursor-pointer"
-                    onClick={currentTaskIndex === 0 ? undefined : handleNextTask}
-                    tabIndex={currentTaskIndex === 0 ? -1 : 0}
-                    aria-disabled={currentTaskIndex === 0}
-                  >
-                    {' ← '}
-                  </span>
-                </span>
-                <span className={`text-gray-500 ${currentTaskIndex === taskList.length - 1 ? "opacity-50 cursor-not-allowed" : ""}`}>
-                  <span
-                    className="cursor-pointer"
-                    onClick={currentTaskIndex === taskList.length - 1 ? undefined : handleNextTask}
-                    tabIndex={currentTaskIndex === taskList.length - 1 ? -1 : 0}
-                    aria-disabled={currentTaskIndex === taskList.length - 1}
-                  >
-                    {' → '}
-                  </span>
-                </span>
-              </>
-            ) : (
-              <span className="text-gray-500">
-                No more tasks needing reminders.
-              </span>
-            )}
             </div>
           </div>
         </div>
@@ -297,16 +323,16 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
         <AlertDialogFooter className="flex flex-col sm:flex-col sm:justify-between sm:flex-wrap gap-2">
           <Button 
             variant="outline" 
-            className="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 border-black"
+            className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 border-black"
             onClick={handleCompleteNow}
+            title="Complete Task Now"
           >
             <CheckCircle2 className="h-4 w-4 mr-2" />
             I'll do it now
           </Button>
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
             <Button 
               variant="outline" 
-              className="w-full bg-[#b57d72] hover:bg-[#93331f] text-white"
+              className="w-full bg-amber-400 hover:bg-amber-300 text-black"
               onClick={handleLowerPriority}
             >
               <Flag className="h-4 w-4 mr-2" />
@@ -314,14 +340,13 @@ export function TaskReminderDialog({ open, taskList, priorities, onOpenChange }:
             </Button>
             <Button 
               variant="outline" 
-              className="w-full hover:bg-[#7f708e] hover:text-white"
+              className="w-full bg-amber-300 hover:bg-amber-200 "
               onClick={handleMoveToBacklog}
             >
               <Archive className="h-4 w-4 mr-2" />
               Move to backlog
             </Button>
-          </div>
-          <AlertDialogCancel onClick={handleDismiss} className="bg-red-900 text-white hover:bg-red-800">
+          <AlertDialogCancel onClick={handleDismiss} className="bg-amber-900 text-white hover:bg-amber-800 border-black">
             Remind me later
           </AlertDialogCancel>
         </AlertDialogFooter>
