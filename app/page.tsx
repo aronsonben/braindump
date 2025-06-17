@@ -5,15 +5,17 @@ import { redirect } from "next/navigation";
 export default function AppHome() {
   return (
     <>
-      <main className="flex flex-col gap-8 p-4 justify-center items-center max-w-[80vw]">
-        <div className="flex flex-col justify-center items-center text-center gap-4">
-          <h2 className="font-medium text-4xl">🧠braindump💩</h2>
-          <p className="text-xs italic">track what{"'"}s important</p>
-        </div>
-        <div className="flex flex-col justify-center items-center sm:justify-start sm:items-start gap-8">
-          <p className="text-[16px]">Do you spend more time organizing your to-do list than doing tasks?</p>
-          <p className="text-[16px]">Do you often forget about important tasks?</p>
-          <p className="text-[16px]">Are you constantly recreating to-do lists to remember what is top priority?</p>
+      <div className="w-full flex flex-col justify-center items-center text-center gap-4 h-[50vh] bg-[#d1b597]">
+        <h2 className="font-medium text-4xl">🧠braindump💩</h2>
+        <p className="text-xs italic">track what{"'"}s important</p>
+      </div>
+      <main className="flex flex-col gap-8 p-4 justify-center items-center max-w-[60vw]">
+        <div className="flex flex-col sm:flex-row justify-center items-center sm:justify-start sm:items-start gap-8 p-6 rounded-lg bg-[hsl(var(--card))] border border-gray-200 shadow-md w-full">
+          <div className="flex flex-col gap-3">
+            <p className="text-[17px] font-semibold">Do you spend more time organizing your to-do list than doing tasks?</p>
+            <p className="text-[16px]">Do you often forget about important tasks?</p>
+            <p className="text-[16px]">Are you constantly recreating to-do lists to remember what is top priority?</p>
+          </div>
         </div>
         <div className="flex flex-col justify-center items-center gap-8">
           <p className="text-center text-xl italic font-bold">Then 🧠braindump💩 is for you!</p>

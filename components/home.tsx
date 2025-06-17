@@ -7,6 +7,7 @@ import { TaskReminderDialog } from "@/components/task-reminder-dialog";
 import { TaskList } from "@/components/task-list";
 import { Task, Category, Priority } from "@/lib/interface";
 import { useToast } from "@/hooks/use-toast";
+import { HomeIcon } from "lucide-react";
 
 interface HomeProps {
   tasks: Task[];
@@ -90,6 +91,16 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
         priorities={priorities}
         onOpenChange={handleReminderDialogChange}
       />
+      <div className="flex items-center gap-4">
+          <Link href="/go">
+            <Button variant="ghost" size="icon">
+              <HomeIcon className="h-5 w-5" />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold text-foreground bg-clip-text">
+            Home
+          </h1>
+        </div>
       <div className="container mx-auto px-4 py-8">
         {tasks?.length === 0 ? (
           <div className="text-center py-12">

@@ -63,8 +63,6 @@ export default async function Go() {
   return (
     <>
     <main id="main-go-container" className="w-full flex flex-col gap-4 p-4 justify-center items-center">
-      
-      
       <Home 
         tasks={tasks} 
         categories={categories} 

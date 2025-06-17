@@ -29,9 +29,9 @@ export default async function Backlog() {
   } 
 
   return (
-    <div className="bg-background">
+    <div className="w-full bg-background">
       <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-4">
           <Link href="/go">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
@@ -41,23 +41,24 @@ export default async function Backlog() {
             Backlog
           </h1>
         </div>
-
-        {tasks?.length === 0 ? (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-semibold mb-4">No tasks in backlog</h2>
-            <p className="text-muted-foreground">
-              Old tasks that you choose to keep will appear here.
-            </p>
-          </div>
-        ) : (
-          <TaskList 
-            tasks={tasks} 
-            categories={categories} 
-            priorities={priorities}
-            showBacklogButton={false} 
-            showResumeButton={true} 
-          />
-        )}
+        <div className="container mx-auto px-4 py-4">
+          {tasks?.length === 0 ? (
+            <div className="text-center py-12">
+              <h2 className="text-2xl font-semibold mb-4">No tasks in backlog</h2>
+              <p className="text-muted-foreground">
+                Old tasks that you choose to keep will appear here.
+              </p>
+            </div>
+          ) : (
+            <TaskList 
+              tasks={tasks} 
+              categories={categories} 
+              priorities={priorities}
+              showBacklogButton={false} 
+              showResumeButton={true} 
+            />
+          )}
+        </div>
       </div>
     </div>
   );
