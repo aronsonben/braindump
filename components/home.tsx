@@ -21,6 +21,8 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
   const [showReminders, setShowReminders] = useState(false);
   const [sortBy, setSortBy] = useState('position');
   const [sortedTasks, setSortedTasks] = useState(tasks);
+  const [bulkEditable, setBulkEditable] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([]);
   const { toast } = useToast();
 
   const handleReminderDialogChange = (open: boolean) => {
@@ -83,6 +85,10 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
     setSortBy(newSortBy);
   }, []);
 
+  const toggleBulkEdit = () => {
+    setBulkEditable(!bulkEditable);
+  }
+
   return (
     <div className="w-full bg-background">
       <TaskReminderDialog
@@ -91,17 +97,34 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
         priorities={priorities}
         onOpenChange={handleReminderDialogChange}
       />
-      <div className="flex items-center gap-4">
-          <Link href="/go">
-            <Button variant="ghost" size="icon">
-              <HomeIcon className="h-5 w-5" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold text-foreground bg-clip-text">
-            Home
-          </h1>
+      <div className="w-full flex items-center justify-between gap-4 container mx-auto px-4">
+        <div className="flex items-center gap-4 container mx-auto">
+        <Link href="/go">
+          <Button variant="ghost" size="icon">
+            <HomeIcon className="h-5 w-5" />
+          </Button>
+        </Link>
+        <h1 className="text-2xl font-bold text-foreground bg-clip-text">
+          Home
+        </h1>
         </div>
-      <div className="container mx-auto px-4 py-8">
+        <div className="">
+          <Button 
+            variant="outline" 
+            size="default" 
+            className="cursor-pointer bg-cream hover:bg-tanskin"
+            onClick={toggleBulkEdit}
+          >
+            Toggle Bulk Edit
+          </Button>
+        </div>
+      </div>
+      <div className="w-full flex items-center justify-end px-10 pt-4 mb-[-12px]">
+        {bulkEditable && (
+          <p className="font-normal italic text-gray-400">{selectedTaskIds.length} of {tasks.length} selected</p>
+        )}
+      </div>
+      <div className="container mx-auto px-4 py-4">
         {tasks?.length === 0 ? (
           <div className="text-center py-12">
             <h2 className="text-2xl font-semibold mb-4">No tasks yet!</h2>
@@ -119,6 +142,9 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
             priorities={priorities}
             onSortChange={handleSortChange}
             currentSort={sortBy}
+            bulkEditable={bulkEditable}
+            selectedTaskIds={selectedTaskIds}
+            setSelectedTaskIds={setSelectedTaskIds}
           />
         )}
       </div>

@@ -3,6 +3,7 @@
 @theme {
   --color-beige: hsl(40 30% 96%)
   --color-beige-off: hsl(39 44% 91%);
+  --color-tanskin: hsl(40 35% 80%);
   --color-cream: hsl(40, 30%, 96%);
   --color-deep-rust: hsl(10, 65%, 45%);   
   --color-burnt-orange: hsl(25, 70%, 50%);

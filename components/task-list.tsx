@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragEndEvent,
@@ -34,6 +35,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import ToolbarDemo from "./ui/toolbar";
 import { Checkbox } from "./ui/checkbox";
 import { differenceInDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -42,9 +44,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { changePriority, changeCategory, moveToBacklog, resumeTask, deleteTask, reorderTasks, updateTaskName, completeTask } from '@/actions/actions';
 import { Task, PriorityLevel, Category, Priority } from "@/lib/interface";
-import { Flag, Archive, FolderOpen, Trash2, GripVertical, Check } from "lucide-react";
+import { Flag, Archive, FolderOpen, Trash2, GripVertical, Check, FolderPlus, FolderEdit, MoreHorizontal } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { sanitizeTask } from "@/lib/utils";
+import { CheckboxIndicator } from "@radix-ui/react-checkbox";
 
 interface TaskListProps {
   tasks: Task[];
@@ -55,6 +58,9 @@ interface TaskListProps {
   showResumeButton?: boolean;
   onSortChange?: (sortBy: string) => void;
   currentSort?: string;
+  bulkEditable?: boolean;
+  selectedTaskIds?: number[];
+  setSelectedTaskIds?: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
 interface SortableTableRowProps {
@@ -98,14 +104,18 @@ export function TaskList({
   showBacklogButton = true, 
   showResumeButton = false,
   onSortChange,
-  currentSort = 'position'
+  currentSort = 'position',
+  bulkEditable = false,
+  selectedTaskIds = [],
+  setSelectedTaskIds = () => { /* no-op */ }
 }: TaskListProps) {
   const { toast } = useToast();
   const [taskList, setTaskList] = useState(tasks);
-  // Inline editing state
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [allChecked, setAllChecked] = useState<boolean | 'indeterminate'>(false);
+  const router = useRouter();
 
   useEffect(() => {
     // This is a placeholder for any side effects you might want to run when tasks change
@@ -164,12 +174,38 @@ export function TaskList({
   };
 
   const handlePriorityChange = async (id: number, priorityId: number) => {
-    changePriority(id, priorityId);
+    // Handle bulk edit if bulkEditable is true
+    if (bulkEditable) {
+      // Get subset of tasks to change from selectedTaskIds
+      const tasksToChange = taskList.filter(t => selectedTaskIds.includes(t.id));
+      // Loop through each task and change the category, if tasks are selected
+      if (tasksToChange.length > 0) {
+        tasksToChange.forEach(task => {
+          console.log(`{Bulk} Changing priority of task ${id} to ${priorityId}`);
+          changePriority(id, priorityId);
+        });
+      }
+    } else {
+      changePriority(id, priorityId);
+    }
   };
 
   const handleCategoryChange = (taskId: number, categoryId: number | null) => {
-    console.log(`Changing category of task ${taskId} to ${categoryId}`);
-    changeCategory(taskId, categoryId);
+    // Handle bulk edit if bulkEditable is true
+    if (bulkEditable) {
+      // Get subset of tasks to change from selectedTaskIds
+      const tasksToChange = taskList.filter(t => selectedTaskIds.includes(t.id));
+      // Loop through each task and change the category, if tasks are selected
+      if (tasksToChange.length > 0) {
+        tasksToChange.forEach(task => {
+          console.log(`{Bulk} Changing category of task ${taskId} to ${categoryId}`);
+          changeCategory(task.id, categoryId);
+        });
+      }
+    } else {
+      console.log(`Changing category of task ${taskId} to ${categoryId}`);
+      changeCategory(taskId, categoryId);
+    }
   };
 
   const handleMoveToBacklog = (id: number) => {
@@ -198,7 +234,7 @@ export function TaskList({
   };
 
   const handleDeleteTask = async (id: number) => {
-    deleteTask(id)
+    await deleteTask(id)
       .then(() => {
         console.log(`Task ${id} deleted`);
           toast({
@@ -213,8 +249,7 @@ export function TaskList({
             description: "Failed to delete the task.",
             action: <ToastAction altText="Retry">Retry</ToastAction>,
           });
-        }
-      );
+        });
   };
 
   // Inline edit handlers
@@ -275,6 +310,31 @@ export function TaskList({
     }
   };
 
+  const handleAllChecked = (allChecked: boolean) => {
+    setSelectedTaskIds(allChecked ? taskList.map(t => t.id) : []);
+    if (selectedTaskIds.length > 0 && selectedTaskIds.length < taskList.length) {
+      setAllChecked("indeterminate");
+    } else {
+      setAllChecked(allChecked);
+    }
+  }
+
+  const handleRowChecked = (id: number) => {
+    if (!selectedTaskIds.includes(id)) {
+      setSelectedTaskIds((prev: number[]) => [...prev, id]);
+    } else {
+      setSelectedTaskIds((prev: number[]) => prev.filter(t => t !== id));
+    }
+    // Add one to selectedTaskIds length to account for the current row being added above
+    const checkedLength = selectedTaskIds.length + 1;
+    if (checkedLength > 0 && checkedLength < taskList.length-1) {
+      setAllChecked("indeterminate");
+      console.log("setting indeterminate")
+    } else {
+      console.log(selectedTaskIds.length)
+    }
+  }
+
   return (
     <>
     <div className="border rounded-lg bg-primary shadow-sm">
@@ -286,7 +346,16 @@ export function TaskList({
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-muted/30">
-              <TableHead className="w-[32px]"></TableHead>
+              <TableHead className="w-[32px]">
+                {bulkEditable && (
+                  <Checkbox checked={allChecked} onCheckedChange={handleAllChecked}>
+                    <CheckboxIndicator>
+                      {allChecked === "indeterminate" && <MoreHorizontal />}
+                      {allChecked === true && <Check/>}
+                    </CheckboxIndicator>
+                  </Checkbox>
+                )}
+              </TableHead>
               <TableHead className="font-semibold text-foreground">Task</TableHead>
               {showAge && <TableHead className="font-semibold text-foreground">Age</TableHead>}
               <TableHead className="font-semibold text-foreground">Category</TableHead>
@@ -310,7 +379,12 @@ export function TaskList({
                     {(attributes, listeners) => (
                       <>
                         <TableCell>
-                          {currentSort === 'position' ? (
+                            {bulkEditable ? (
+                            <Checkbox
+                              checked={selectedTaskIds.includes(task.id)}
+                              onCheckedChange={() => handleRowChecked(task.id)}
+                            />
+                            ) : currentSort === 'position' ? (
                             <Button
                               id="position-handle"
                               variant="ghost"
@@ -321,9 +395,9 @@ export function TaskList({
                             >
                               <GripVertical className="h-3 w-3 text-muted-foreground" />
                             </Button>
-                          ) : (
+                            ) : (
                             <div className="h-6 w-6"></div>
-                          )}
+                            )}
                         </TableCell>
                         <TableCell className="font-medium text-foreground truncate max-w-[200px]" title={task.title}>
                           {editingId === task.id ? (
@@ -413,7 +487,6 @@ export function TaskList({
                                 <FolderOpen className="h-4 w-4 mr-2" />
                                 Remove Category
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
                               {categories?.map((category) => (
                                 <DropdownMenuItem
                                   key={category.id}
@@ -426,6 +499,11 @@ export function TaskList({
                                   {category.name}
                                 </DropdownMenuItem>
                               ))}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => router.push("/categories")}>
+                                <FolderPlus className="h-4 w-4 mr-2" />
+                                Add New Category
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -444,6 +522,11 @@ export function TaskList({
                                   {priority.name}
                                 </DropdownMenuItem>
                               ))}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => router.push("/priorities")}>
+                                <FolderEdit className="h-4 w-4 mr-2" />
+                                Edit Priorities
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -463,13 +546,12 @@ export function TaskList({
                             {showBacklogButton && (
                               <Button
                                 variant="outline"
-                                size="sm"
+                                size="icon"
                                 onClick={() => handleMoveToBacklog(task.id)}
-                                className="h-6 text-xs py-0 text-muted-foreground hover:text-[#575e77] hover:bg-[#e0e3ee]"
+                                className="h-6 w-6 text-xs py-0 text-muted-foreground hover:text-[#575e77] hover:bg-[#e0e3ee]"
                                 title="Move to backlog"
                               >
-                                <Archive className="h-3 w-3 mr-1" />
-                                Backlog
+                                <Archive className="h-3 w-3" />
                               </Button>
                             )}
                             <Button

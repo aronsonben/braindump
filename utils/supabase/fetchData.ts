@@ -203,6 +203,44 @@ export const getBacklogTasks = async (user_id: string, sortBy: string = 'positio
   return tasks as Task[];
 };
 
+export const getCompletedTasks = async (user_id: string, sortBy: string = 'position') => {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("tasks")
+    .select("*")
+    .eq("user_id", user_id)
+    .eq("in_backlog", false)
+    .eq("completed", true);
+    
+  // Apply sorting based on the sortBy parameter
+  switch (sortBy) {
+    case 'position':
+      query = query.order('position', { ascending: true });
+      break;
+    case 'priority':
+      // Custom priority order: high -> medium-high -> medium -> medium-low -> low
+      query = query.order('priority', { ascending: false }); // This is approximate, we'll refine in client
+      break;
+    case 'category':
+      query = query.order('category_id', { ascending: true });
+      break;
+    case 'age':
+      query = query.order('created_at', { ascending: false }); // Newest first
+      break;
+    default:
+      query = query.order('position', { ascending: true });
+  }
+
+  const { data: tasks, error } = await query;
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return tasks as Task[];
+};
+
 // Fetch all categories for a user, or default categories if none exist
 export const getCategories = async (user_id: string) => {
   const supabase = await createClient();
