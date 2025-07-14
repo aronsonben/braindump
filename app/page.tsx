@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 export default function AppHome() {
   return (
     <>
-      <main className="flex flex-col gap-8 p-4 justify-center items-center max-w-[60vw] bg-[#d1b597]">
+      <main className="flex flex-col gap-8 p-4 justify-center items-center max-w-[60vw] ">
         <div className="flex flex-col gap-8 p-4 justify-center items-center max-w-[60vw] bg-[hsl(var(--card))] m-6 rounded-3xl">
           <div className="w-full flex flex-col justify-center items-center text-center gap-4 h-[20vh] bg-[#d1b597] shadow-xl rounded-3xl">
             <h2 className="font-medium text-4xl">🧠braindump💩</h2>
@@ -13,7 +13,7 @@ export default function AppHome() {
           </div>
           <div className="flex flex-col justify-start items-start gap-8 p-4 rounded-md bg-[hsl(var(--card))]">
             <p className="text-[14px]">
-              <b>Do you spend more time organization your to-do list than actually doing tasks?</b><br />
+              <b>Do you spend more time organizing your to-do list than actually doing tasks?</b><br />
               Do you often forget about important tasks?<br />
               Are you constantly recreating to-do lists to remember?<br />
               <p className="text-center text-[16px] m-4 font-bold">Then 🧠braindump💩 is for you!</p>

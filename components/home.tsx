@@ -108,7 +108,15 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
           Home
         </h1>
         </div>
-        <div className="">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="default" 
+            className="cursor-pointer text-white bg-[#e04d40] hover:bg-[#40dbe0] border-black"
+            onClick={toggleBulkEdit}
+          >
+            Rank
+          </Button>
           <Button 
             variant="outline" 
             size="default" 
