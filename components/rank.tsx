@@ -27,7 +27,8 @@ import {
   useSensor,
   useSensors,
   useDroppable,
-  useDraggable
+  useDraggable,
+  pointerWithin
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -37,6 +38,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
+import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast";
 import { createCategory, deleteCategory, updateCategoryName } from "@/actions/actions";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
@@ -97,6 +99,47 @@ function DraggableTask({ task }: { task: Task }) {
   );
 }
 
+interface DraggableSlotProps {
+  index: number;
+  currentSection: string;
+  currentTask: Task;
+  removeTask: (index: number) => void;
+}
+
+function DraggableSlot({ index, currentSection, currentTask, removeTask }: DraggableSlotProps) {
+  const {attributes, listeners, setNodeRef, transform} = useDraggable({
+    id: `draggable-slot-${currentSection}-${index}`,
+  });
+  const style = {
+    transform: CSS.Translate.toString(transform),
+  };
+  
+  return (
+    <div 
+      ref={setNodeRef} 
+      key={`draggable-slot-${currentSection}-${index}`}
+      className="w-full h-16 bg-gray-100 border border-gray-300 rounded-lg flex items-center justify-between px-4"
+      style={style} 
+      {...listeners} 
+      {...attributes}
+      >
+      {currentTask ? (
+        <>
+          <span className="text-gray-500">{currentTask.title}</span>
+          <button
+            className="text-red-500 hover:text-red-700"
+            onClick={() => removeTask(index)}
+          >
+            ✕
+          </button>
+        </>
+      ) : (
+        <span className="text-gray-500">Drag task here</span>
+      )}
+    </div>
+  );
+}
+
 interface DroppableRankSlotProps {
   slotOrder: string;
   children: React.ReactNode;
@@ -104,14 +147,17 @@ interface DroppableRankSlotProps {
 
 const DroppableRankSlot = ({ slotOrder, children }: DroppableRankSlotProps) => {
   const droppableId = `droppable-rank-slot-${slotOrder}`;
-  const { setNodeRef } = useDroppable({
+  const { isOver, setNodeRef } = useDroppable({
     id: droppableId,
   });
+
+  let droppableClasses = "w-full mx-8";
+  if (isOver) { droppableClasses = droppableClasses + " border-green-800"}
 
   return (
     <div 
       ref={setNodeRef} 
-      className="w-full mx-8"
+      className={cn("w-full mx-8", (isOver ? "border-green-800 border-2 rounded-lg" : ""))}
       aria-label="Droppable region"
     >
       {children}
@@ -128,6 +174,29 @@ interface DroppableRankListProps {
 
 function DroppableRankList({ droppables, currentRankedTasks, currentSection, removeTask }: DroppableRankListProps) {
 
+  // Function to handle the DragEndEvent of one of the droppable ranking slots
+  // "If a collision is detected, the over property will contain the id 
+  //   of the droppable over which it was dropped."
+  const handleRankDragEnd = ({over}: DragEndEvent) => {
+    // if dropped over a droppable position
+      // identify the index of that position
+      // move the current item to that position
+      // move the other item to the current position
+    if (over) {
+      console.log("DROPPED!", over);
+    //   const overIndex = currentRankedTasks.indexOf(over.id);
+
+    //   if (activeIndex !== overIndex) {
+    //     const newIndex = overIndex;
+
+    //     setItems((items) => arrayMove(items, activeIndex, newIndex));
+    //   }
+    // }
+
+    //   setActiveId(null);
+    }
+  }
+
   return (
     <section>
       {droppables.map((id, index) => (
@@ -136,23 +205,14 @@ function DroppableRankList({ droppables, currentRankedTasks, currentSection, rem
             <div className="w-12 h-16 border border-gray-300 rounded-lg flex items-center justify-center">
               <span className="text-gray-500">{index + 1}</span>
             </div>
-            <DroppableRankSlot slotOrder={id} key={id}>
-              <div className="w-full h-16 bg-gray-100 border border-gray-300 rounded-lg flex items-center justify-between px-4">
-                {currentRankedTasks[index] ? (
-                  <>
-                    <span className="text-gray-500">{currentRankedTasks[index].title}</span>
-                    <button
-                      className="text-red-500 hover:text-red-700"
-                      onClick={() => removeTask(index)}
-                    >
-                      ✕
-                    </button>
-                  </>
-                ) : (
-                  <span className="text-gray-500">Drag task here</span>
-                )}
-              </div>
-            </DroppableRankSlot>
+              <DroppableRankSlot slotOrder={id} key={id}>
+                <DraggableSlot 
+                  index={index} 
+                  currentSection={currentSection}
+                  currentTask={currentRankedTasks[index]} 
+                  removeTask={removeTask}
+                  />
+              </DroppableRankSlot>
             <div className="w-28 h-16 rounded-lg flex items-center justify-center">
               {currentSection === "AGE" && currentRankedTasks[index] && (
                 <span className="text-gray-500">
@@ -289,7 +349,7 @@ export default function Rank({ tasks }: { tasks: Task[] }) {
           ))}
         </div>
         <DndContext
-          collisionDetection={closestCenter}
+          collisionDetection={pointerWithin}
           onDragEnd={handleDragEnd}
           sensors={useSensors(
             useSensor(PointerSensor),

@@ -52,8 +52,8 @@ export default function RootLayout({
         >
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 w-full flex flex-col justify-between items-center">
-              <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-                <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
+              <nav className="w-full flex justify-center bg-cream border-b border-b-foreground/10 h-16">
+                <div className="w-full flex justify-between items-center p-3 px-10 text-sm">
                   <Sidebar>
                     <SidebarTrigger>
                       <Menu className="cursor-pointer h-6 w-6 text-muted-foreground hover:text-primary" />
@@ -113,18 +113,20 @@ export default function RootLayout({
                   </Sidebar>
                   <div className="flex gap-4 items-center font-semibold">
                     <Link href={"/"}>🧠braindump💩</Link>
+                  </div>
+                  <div className="flex items-center">
                     <div className="flex items-center gap-2">
                       <ThemeSwitcher />
                     </div>
+                    <ReminderSettings 
+                      trigger={
+                        <Button variant="ghost" size="icon" className="ml-2">
+                          <Settings className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                        </Button>
+                      }
+                    />
+                    <HeaderAuth />
                   </div>
-                  <ReminderSettings 
-                    trigger={
-                      <Button variant="ghost" size="icon" className="ml-2">
-                        <Settings className="h-5 w-5 text-muted-foreground hover:text-primary" />
-                      </Button>
-                    }
-                  />
-                  <HeaderAuth />
                 </div>
               </nav>
               <div id="layout-container" className="flex-1 flex flex-col gap-20 w-full jutsify-center items-center bg-[#f9f5ed]">

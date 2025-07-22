@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { CustomLink } from "@/components/ui/link";
 import { Button } from "@/components/ui/button";
 import { TaskReminderDialog } from "@/components/task-reminder-dialog";
 import { TaskList } from "@/components/task-list";
 import { Task, Category, Priority } from "@/lib/interface";
 import { useToast } from "@/hooks/use-toast";
-import { HomeIcon } from "lucide-react";
+import { BrainCircuit, HomeIcon } from "lucide-react";
 
 interface HomeProps {
   tasks: Task[];
@@ -100,7 +101,7 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
       <div className="w-full flex items-center justify-between gap-4 container mx-auto px-4">
         <div className="flex items-center gap-4 container mx-auto">
         <Link href="/go">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="cursor-pointer">
             <HomeIcon className="h-5 w-5" />
           </Button>
         </Link>
@@ -109,14 +110,18 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
         </h1>
         </div>
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="default" 
-            className="cursor-pointer text-white bg-[#e04d40] hover:bg-[#40dbe0] border-black"
-            onClick={toggleBulkEdit}
-          >
-            Rank
-          </Button>
+            <CustomLink href="/braindump" variant="outline">
+                <BrainCircuit className="h-5 w-5 mr-3" />
+                New Brain Dump
+            </CustomLink>
+            <CustomLink 
+              variant="default" 
+              size="default" 
+              href="/rank"
+              className="cursor-pointer text-white bg-gradient-to-r from-[#e04d40] to-white hover:from-[#40dbe0] hover:to-white border border-black"
+              >
+              Rank
+            </CustomLink>
           <Button 
             variant="outline" 
             size="default" 
