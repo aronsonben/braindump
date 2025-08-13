@@ -97,17 +97,17 @@ export default function RootLayout({
                           </Button>
                         </Link>
                         <Link href="/completed">
-                          <Button variant="ghost" className="w-full justify-start px-4 py-3 cursor-pointer rounded-none text-base font-normal hover:bg-accent border-t-1 border-t-black hover:bg-amber-400 transition-colors">
+                          <Button variant="ghost" className="w-full justify-start px-4 py-3 cursor-pointer rounded-none text-base font-normal hover:bg-accent border-y-1 border-y-black hover:bg-amber-400 transition-colors">
                             <CheckSquare className="h-5 w-5 mr-3" />
                             Completed
                           </Button>
                         </Link>
-                        <Link href="/matrix">
+                        {/* <Link href="/matrix">
                           <Button variant="ghost" className="w-full justify-start px-4 py-3 cursor-pointer rounded-none text-base font-normal hover:bg-accent border-y-1 border-y-black hover:bg-amber-400 transition-colors">
                             <ChartScatterIcon className="h-5 w-5 mr-3" />
                             Matrix
                           </Button>
-                        </Link>
+                        </Link> */}
                       </div>
                     </SidebarContent>
                   </Sidebar>

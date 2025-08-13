@@ -114,14 +114,14 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
                 <BrainCircuit className="h-5 w-5 mr-3" />
                 New Brain Dump
             </CustomLink>
-            <CustomLink 
+            {/* <CustomLink 
               variant="default" 
               size="default" 
               href="/rank"
               className="cursor-pointer text-white bg-gradient-to-r from-[#e04d40] to-white hover:from-[#40dbe0] hover:to-white border border-black"
               >
               Rank
-            </CustomLink>
+            </CustomLink> */}
           <Button 
             variant="outline" 
             size="default" 

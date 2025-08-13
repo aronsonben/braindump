@@ -1,22 +1,30 @@
 "use client"
 
 import { useState } from "react";
-import { useRouter } from 'next/navigation'
+import { useRouter, redirect } from 'next/navigation'
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { SimpleUser } from "@/lib/interface";
 import { createTasks } from "@/actions/actions";
-import { CustomLink } from "@/components/ui/link";
-import { BrainCircuit } from "lucide-react";
 
-export default function BrainDump() {
+interface BraindumpProps {
+  user: SimpleUser;
+}
+
+export default function Braindump({ user }: BraindumpProps) {
   const [input, setInput] = useState("");
-  const [newFlow, setNewFlow] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
   const handleSubmit = async () => {
+    // first check if the user is signed in or not. if not, take to sign-up page.
+    if (!user) {
+      return redirect("/sign-up");
+    } 
+
+    // if user is signed in, create the tasks, save them to db, and take user to /go page
     const newTasks = input
       .split("\n")
       .map(line => line.trim())
@@ -40,7 +48,6 @@ export default function BrainDump() {
         description: `${newTasks.length} tasks have been created.`
       });
   
-      console.log("back to go");
       router.push("/go");
     } catch (error) {
       console.error("Error creating tasks:", error);
@@ -53,33 +60,23 @@ export default function BrainDump() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-          {process.env.NODE_ENV === "development" && (
-            <div className="flex py-4">
-              <Button variant="outline" onClick={() => setNewFlow(!newFlow)}>
-                <BrainCircuit className="h-5 w-5 mr-3" />
-                {newFlow ? "Disable" : "Enable"} New Flow
-              </Button>
-              {newFlow && (
-                <p className="bg-amber-400">new flow</p>
-              )}
-            </div>
-          )}
+    <div className="w-full bg-background">
+      <div className="w-full mx-auto px-4 py-8">
           <p className="text-muted-foreground mb-4">
-            Write down everything that's on your mind, one task per line. Don't worry about order - you can set priorities later.
+            Write down everything that's on your mind, one task per line.
           </p>
-          <Textarea
+            <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Buy groceries&#10;Call dentist&#10;Fix bike tire&#10;..."
+            placeholder={
+`Buy groceries
+Call dentist
+Fix bike tire
+...`}
             className="min-h-[300px] mb-4"
-          />
+            />
           <div className="flex justify-end gap-4">
-            <Button variant="outline" onClick={() => router.push("/go")}>
-              Cancel
-            </Button>
-            <Button variant="outline" onClick={handleSubmit} disabled={!input.trim()}>
+            <Button variant="outline" onClick={handleSubmit} disabled={!input.trim()} className="cursor-pointer hover:bg-amber-100">
               Create Tasks
             </Button>
           </div>
