@@ -371,6 +371,7 @@ export function TaskList({
               {taskList.map((task) => {
                 const daysOld = differenceInDays(new Date(), new Date(task.created_at));
                 // const daysOld = 8;
+                // TODO: REPLACE THIS WITH A JOIN WHEN FETCHING DATA
                 const taskCategory = categories?.find(c => c.id === task.category_id);
                 const taskPriority = priorities?.find(p => p.id === task.priority);
 

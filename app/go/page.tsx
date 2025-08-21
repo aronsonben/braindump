@@ -42,8 +42,6 @@ export default async function Go() {
   const tasks = await getActiveTasksCached(user.id, sortBy);
   const categories = await getCategoriesCached(user.id);
   const priorities = await getPrioritiesCached(user.id);
-  const preferences = await getUserPreferencesCached(user.id);
-  const tasksNeedingReminders = await getActiveTasksNeedingRemindersCached(user.id);
   
   if (!tasks) {
     console.log("Tasks not found");
@@ -54,11 +52,16 @@ export default async function Go() {
   if (!priorities) {
     console.log("Priorities not found");
   }
+
+  /** Removing the preferences & tasksNeedingReminder features on 8/20/25 
+   *  to streamline app performance & functionality.
+  const preferences = await getUserPreferencesCached(user.id);
+  const tasksNeedingReminders = await getActiveTasksNeedingRemindersCached(user.id);
   if (!preferences) {
     console.log("Preferences not found");
   } 
-
   const showReminders = preferences?.enable_reminders;
+    */
   
   return (
     <>
@@ -67,7 +70,6 @@ export default async function Go() {
         tasks={tasks} 
         categories={categories} 
         priorities={priorities}
-        tasksNeedingReminders={tasksNeedingReminders} 
       />
     </main>
     <Toaster />

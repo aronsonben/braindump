@@ -1,7 +1,6 @@
 import Braindump from "@/components/braindump";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { redirect } from "next/navigation";
 import { getUserData } from "@/utils/supabase/fetchData";
 import { SimpleUser } from "@/lib/interface";
 

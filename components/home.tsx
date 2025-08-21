@@ -6,6 +6,7 @@ import { CustomLink } from "@/components/ui/link";
 import { Button } from "@/components/ui/button";
 import { TaskReminderDialog } from "@/components/task-reminder-dialog";
 import { TaskList } from "@/components/task-list";
+import { TaskListV2 } from "@/components/task-list-v2";
 import { Task, Category, Priority } from "@/lib/interface";
 import { useToast } from "@/hooks/use-toast";
 import { BrainCircuit, HomeIcon } from "lucide-react";
@@ -149,7 +150,7 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
             </Link>
           </div>
         ) : (
-          <TaskList 
+          <TaskList
             tasks={sortedTasks || []} 
             categories={categories}
             priorities={priorities}
