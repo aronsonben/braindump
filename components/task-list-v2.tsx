@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useReducer } from "react";
+import { useState, useEffect, useReducer, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Column,
@@ -14,17 +14,8 @@ import {
   RowData,
   createColumnHelper,
   Row,
+  CellContext,
 } from '@tanstack/react-table'
-import {
-  DndContext,
-  DragEndEvent,
-  DraggableAttributes,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -55,9 +46,34 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { changePriority, changeCategory, moveToBacklog, resumeTask, deleteTask, reorderTasks, updateTaskName, completeTask } from '@/actions/actions';
-import { Task, PriorityLevel, Category, Priority } from "@/lib/interface";
-import { Flag, Archive, FolderOpen, Trash2, GripVertical, Check, FolderPlus, FolderEdit, MoreHorizontal } from "lucide-react";
+import {
+  changePriority,
+  changeCategory,
+  moveToBacklog,
+  resumeTask,
+  deleteTask,
+  reorderTasks,
+  updateTaskName,
+  completeTask,
+} from "@/actions/actions";
+import {
+  Task,
+  PriorityLevel,
+  Category,
+  Priority,
+} from "@/lib/interface";
+import {
+  Flag,
+  Archive,
+  FolderOpen,
+  Trash2,
+  GripVertical,
+  Check,
+  FolderPlus,
+  FolderEdit,
+  MoreHorizontal,
+  ChevronDown
+} from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { sanitizeTask } from "@/lib/utils";
 import { CheckboxIndicator } from "@radix-ui/react-checkbox";
@@ -75,6 +91,8 @@ const defaultData: Task[] = [
     created_at: new Date(),
     inserted_at: new Date(),
     last_reminded: new Date(),
+    category_name: "music",
+    priority_name: ""
   },
   {
     id: 2,
@@ -88,6 +106,8 @@ const defaultData: Task[] = [
     created_at: new Date(),
     inserted_at: new Date(),
     last_reminded: new Date(),
+    category_name: "",
+    priority_name: "high"
   },{
     id: 3,
     user_id: "12341",
@@ -100,6 +120,8 @@ const defaultData: Task[] = [
     created_at: new Date(),
     inserted_at: new Date(),
     last_reminded: new Date(),
+    category_name: "",
+    priority_name: ""
   },
 ]
 
@@ -117,37 +139,66 @@ interface TaskListProps {
   setSelectedTaskIds?: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
-interface SortableTableRowProps {
-  task: Task;
-  children: (attributes: DraggableAttributes, listeners: SyntheticListenerMap | undefined) => React.ReactNode;
+/*******************************
+ * From Tanstack Example :::
+ * ***************************** */
+declare module '@tanstack/react-table' {
+  interface TableMeta<TData extends RowData> {
+    updateData: (rowIndex: number, columnId: string, value: unknown) => void
+  }
 }
 
-function SortableTableRow({ task, children, ...props }: SortableTableRowProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
+interface defaultCellBehaviorProps {
+  getValue: () => unknown;
+  index: number;
+  id: string;
+  table: TableV2<Task>
+}
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+function DefaultCellBehavior({ getValue, index, id, table }: defaultCellBehaviorProps) {
+  const initialValue = getValue()
+  // We need to keep and update the state of the cell normally
+  const [value, setValue] = useState(initialValue)
+
+  // When the input is blurred, we'll call our table meta's updateData function
+  const onBlur = () => {
+    table.options.meta?.updateData(index, id, value)
+  }
+
+  // If the initialValue is changed external, sync it up with our state
+  useEffect(() => {
+    setValue(initialValue)
+  }, [initialValue])
 
   return (
-    <TableRow
-      ref={setNodeRef}
-      style={style}
-      className={`hover:bg-muted/30 ${isDragging ? 'bg-muted/50' : ''}`}
-      {...props}
-    >
-      {children(attributes, listeners)}
-    </TableRow>
-  );
+    <input
+      value={value as string}
+      onChange={e => setValue(e.target.value)}
+      onBlur={onBlur}
+    />
+  )
+}
+
+// Give our default column cell renderer editing superpowers!
+const defaultColumn: Partial<ColumnDef<Task>> = {
+  cell: ({ getValue, row: { index }, column: { id }, table }) => DefaultCellBehavior({getValue, index, id, table}),
+}
+
+/** This is for use with Pagination... not relevant at this moment (8/25) */
+function useSkipper() {
+  const shouldSkipRef = useRef(true)
+  const shouldSkip = shouldSkipRef.current
+
+  // Wrap a function with this to skip a pagination reset temporarily
+  const skip = useCallback(() => {
+    shouldSkipRef.current = false
+  }, [])
+
+  useEffect(() => {
+    shouldSkipRef.current = true
+  })
+
+  return [shouldSkip, skip] as const
 }
 
 function RowActions({ task }: {task: Row<Task>}) {
@@ -197,7 +248,7 @@ function RowActions({ task }: {task: Row<Task>}) {
   )
 }
 
-export function TaskListV2({ 
+export function TaskListV2({
   tasks, 
   categories, 
   priorities,
@@ -210,51 +261,209 @@ export function TaskListV2({
   selectedTaskIds = [],
   setSelectedTaskIds = () => { /* no-op */ }
 }: TaskListProps) {
-  // const { toast } = useToast();
-  const [data, _setData] = useState(() => [...tasks])
+  const { toast } = useToast();
+  const [data, setData] = useState(() => [...tasks])
+  // Track which row is being edited for category or priority
+  const [editingCategoryRowId, setEditingCategoryRowId] = useState<number | null>(null);
+  const [editingPriorityRowId, setEditingPriorityRowId] = useState<number | null>(null);
+  // const [data, setData] = React.useState(() => makeData(1000))
   const rerender = useReducer(() => ({}), {})[1]
 
   const columnHelper = createColumnHelper<Task>();
   const columns = [
-    columnHelper.accessor(row => row.title, {
+    {
       id: 'title',
-      cell: task => task.getValue(),
+      accessorFn: (task: Task) => task.title,
+    },
+    columnHelper.accessor('created_at', {
+      header: () => 'age',
+      cell: (task) => (`${differenceInDays(new Date(), new Date(task.getValue()))} days`)
     }),
     {
-      id: 'age',
-      accessorFn: (task: Task) => (`${differenceInDays(new Date(), new Date(task.created_at))} days`),
-    },
-    columnHelper.accessor(row => row.category_id, {
       id: 'category',
-      cell: task => ( categories?.find(c => c.id === task.getValue()) ? task.getValue() : ''),
-    }),
-    columnHelper.accessor(row => row.priority, {
+      header: 'category',
+      cell: ({ row }: { row: Row<Task> }) => {
+        const task = row.original;
+        const isEditing = editingCategoryRowId === task.id;
+        if (isEditing) {
+          return (
+            <DropdownMenu open onOpenChange={(open) => { if (!open) setEditingCategoryRowId(null); }}>
+              <DropdownMenuTrigger asChild>
+                <span
+                  tabIndex={0}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setEditingCategoryRowId(task.id)}
+                  onKeyDown={e => { if (e.key === 'Enter') setEditingCategoryRowId(task.id); }}
+                  className="w-full flex items-center justify-between mr-2 max-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap"
+                >
+                  {task.category_name}
+                  <span className="ml-1"><ChevronDown strokeWidth={4} className="h-3 w-3 mr-2"/></span>
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="bottom" sideOffset={4} className="min-w-[8rem]">
+                {categories.map((cat) => (
+                  <DropdownMenuItem
+                    key={cat.id}
+                    onSelect={async () => {
+                      if (cat.id !== task.category_id) {
+                        // Optimistic update
+                        const prevCategoryId = task.category_id;
+                        const prevCategoryName = task.category_name;
+                        setData((prev) => prev.map(t => t.id === task.id ? { ...t, category_id: cat.id, category_name: cat.name } : t));
+                        setEditingCategoryRowId(null);
+                        try {
+                          await changeCategory(task.id, cat.id);
+                        } catch (err: any) {
+                          // Revert on error
+                          setData((prev) => prev.map(t => t.id === task.id ? { ...t, category_id: prevCategoryId, category_name: prevCategoryName } : t));
+                          toast({ title: 'Failed to update category', description: err?.message || 'An error occurred.' });
+                        }
+                        return;
+                      }
+                      setEditingCategoryRowId(null);
+                    }}
+                    className={cat.id === task.category_id ? 'font-semibold bg-amber-100' : ''}
+                  >
+                    {cat.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        } 
+        return (
+          <span
+            tabIndex={0}
+            style={{ cursor: 'pointer', width: '100%' }}
+            onClick={() => setEditingCategoryRowId(task.id)}
+            onKeyDown={e => { if (e.key === 'Enter') setEditingCategoryRowId(task.id); }}
+            className="w-full flex items-center justify-between mr-2 max-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap"
+          >
+            {task.category_name || <span>&nbsp;</span>}
+            <span className="ml-1"><ChevronDown className="h-3 w-3 mr-2"/></span>
+          </span>
+        );
+      },
+    },
+    {
       id: 'priority',
-      cell: task => ( priorities?.find(p => p.id === task.getValue()) ? task.getValue() : ''),
-    }),
+      header: 'priority',
+      cell: ({ row }: { row: Row<Task> }) => {
+        const task = row.original;
+        const isEditingPriority = editingPriorityRowId === task.id;
+        if (isEditingPriority) {
+          return (
+            <DropdownMenu open onOpenChange={(open) => { if (!open) setEditingPriorityRowId(null); }}>
+              <DropdownMenuTrigger asChild>
+                <span
+                  tabIndex={0}
+                  onClick={() => setEditingPriorityRowId(task.id)}
+                  onKeyDown={e => { if (e.key === 'Enter') setEditingPriorityRowId(task.id); }}
+                  className="w-full max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap"
+                  style={{ 
+                    cursor: 'pointer', 
+                    display: 'block', 
+                    width: '100%', 
+                  }}
+                >
+                  {task.priority_name}
+                  <span className="ml-1"><ChevronDown className="h-3 w-3 mr-2"/></span>
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="bottom" sideOffset={4} className="min-w-[8rem]">
+                {priorities.map((priority) => (
+                  <DropdownMenuItem
+                    key={priority.id}
+                    onSelect={async () => {
+                      if (priority.id !== task.priority) {
+                        // Optimistic update
+                        const prevPriorityId = task.priority;
+                        const prevPriorityName = task.priority_name;
+                        setData((prev) => prev.map(t => t.id === task.id ? { ...t, priority_id: priority.id, priority_name: priority.name } : t));
+                        setEditingPriorityRowId(null);
+                        try {
+                          await changePriority(task.id, priority.id);
+                        } catch (err: any) {
+                          // Revert on error
+                          setData((prev) => prev.map(t => t.id === task.id ? { ...t, priority: prevPriorityId, priority_name: prevPriorityName } : t));
+                          toast({ title: 'Failed to update priority', description: err?.message || 'An error occurred.' });
+                        }
+                        return;
+                      }
+                      setEditingPriorityRowId(null);
+                    }}
+                    className={priority.id === task.priority ? 'font-semibold bg-amber-100' : ''}
+                  >
+                    {priority.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        }
+        return (
+          <span
+            tabIndex={0}
+            title={task.priority_name || ''}
+            onClick={() => setEditingPriorityRowId(task.id)}
+            onKeyDown={e => { if (e.key === 'Enter') setEditingPriorityRowId(task.id); }}
+            className="w-full max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap"
+            style={{ 
+              cursor: 'pointer', 
+              display: 'block', 
+              width: '100%', 
+            }}
+          >
+            {task.priority_name || <span>&nbsp;</span>}
+          </span>
+        );
+      },
+    },
     // Display Column
     columnHelper.display({
       id: 'actions',
-      cell: props => <RowActions task={props.row} />,
+      cell: props => <RowActions task={props.row} />, 
     }),
   ]
+
+  const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper()
 
   const table = useReactTable({
     columns,
     data,
+    defaultColumn,
     debugTable: true,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    meta: {
+      updateData: (rowIndex, columnId, value) => {
+        // Skip page index reset until after next rerender
+        skipAutoResetPageIndex()
+        console.log("Trying to updateData for: ", columnId);
+        if(columnId === "title") {
+          console.log("Updating title for: ", rowIndex, " with: ", value);
+          // Get id for the task at rowIndex
+          const taskId = table.getRowModel().rows[rowIndex]?.original.id;
+          console.log("task id is: ", taskId);
+          updateTaskName(taskId, value as string);
+        }
+        else if (columnId === "category") {
+          console.log("Should show a dropdown & then update accordingly");
+        }
+      },
+    },
   })
 
   return (
     <>
-    <div className="border rounded-lg bg-primary shadow-sm">
-      <table>
+    <div className="px-2 border rounded-lg bg-primary shadow-sm overflow-scroll">
+      <table className="w-full">
         <thead>
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => (
-                <th key={header.id}>
+                <th key={header.id} className="py-2 pl-2 text-base text-left">
                   {header.isPlaceholder
                     ? null
                     : flexRender(
@@ -268,9 +477,9 @@ export function TaskListV2({
         </thead>
         <tbody>
           {table.getRowModel().rows.map(row => (
-            <tr key={row.id}>
+            <tr key={row.id} className="py-2">
               {row.getVisibleCells().map(cell => (
-                <td key={cell.id}>
+                <td key={cell.id} className="py-1 text-left">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}

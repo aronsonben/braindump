@@ -27,6 +27,24 @@ export interface Task {
   created_at: Date;
   inserted_at: Date;
   last_reminded: Date;
+  category_name: string;
+  priority_name: string;
+}
+
+export interface Task {
+    id: number;
+  user_id: string;
+  title: string;
+  priority: number;
+  category_id: number;
+  in_backlog: boolean;
+  completed: boolean;
+  position: number;
+  created_at: Date;
+  inserted_at: Date;
+  last_reminded: Date;
+  category_name: string;
+  priority_name: string;
 }
 
 export interface Category {

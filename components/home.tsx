@@ -123,14 +123,14 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
               >
               Rank
             </CustomLink> */}
-          <Button 
+          {/* <Button 
             variant="outline" 
             size="default" 
             className="cursor-pointer bg-cream hover:bg-tanskin"
             onClick={toggleBulkEdit}
           >
             Toggle Bulk Edit
-          </Button>
+          </Button> */}
         </div>
       </div>
       <div className="w-full flex items-center justify-end px-10 pt-4 mb-[-12px]">
@@ -150,7 +150,7 @@ export default function Home({ tasks, categories, priorities, tasksNeedingRemind
             </Link>
           </div>
         ) : (
-          <TaskList
+          <TaskListV2
             tasks={sortedTasks || []} 
             categories={categories}
             priorities={priorities}

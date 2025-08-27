@@ -61,39 +61,57 @@ export const getUserPreferences = async (user_id: string) => {
 export const getActiveTasks = async (user_id: string, sortBy: string = 'position') => {
   const supabase = await createClient();
 
+  // let query = supabase
+  //   .from("tasks")
+  //   .select("*")
+  //   .eq("user_id", user_id)
+    // .eq("in_backlog", false)
+    // .eq("completed", false);
+
   let query = supabase
     .from("tasks")
-    .select("*")
+    .select(`
+      *,
+      categories (name),
+      priorities (name)`)
     .eq("user_id", user_id)
     .eq("in_backlog", false)
     .eq("completed", false);
     
   // Apply sorting based on the sortBy parameter
-  switch (sortBy) {
-    case 'position':
-      query = query.order('position', { ascending: true });
-      break;
-    case 'priority':
-      // Custom priority order: high -> medium-high -> medium -> medium-low -> low
-      query = query.order('priority', { ascending: false }); // This is approximate, we'll refine in client
-      break;
-    case 'category':
-      query = query.order('category_id', { ascending: true });
-      break;
-    case 'age':
-      query = query.order('created_at', { ascending: false }); // Newest first
-      break;
-    default:
-      query = query.order('position', { ascending: true });
-  }
+  // switch (sortBy) {
+  //   case 'position':
+  //     query = query.order('position', { ascending: true });
+  //     break;
+  //   case 'priority':
+  //     // Custom priority order: high -> medium-high -> medium -> medium-low -> low
+  //     query = query.order('priority', { ascending: false }); // This is approximate, we'll refine in client
+  //     break;
+  //   case 'category':
+  //     query = query.order('category_id', { ascending: true });
+  //     break;
+  //   case 'age':
+  //     query = query.order('created_at', { ascending: false }); // Newest first
+  //     break;
+  //   default:
+  //     query = query.order('position', { ascending: true });
+  // }
 
   const { data: tasks, error } = await query;
 
   if (error) {
+    console.log(error);
     throw new Error(error.message);
   }
 
-  return tasks as Task[];
+  const formattedTasks = tasks.map(task => ({
+    ...task,
+    category_name: task.categories?.name,
+    priority_name: task.priorities?.name
+  }));
+
+  // Temp created 'Task' type to test out adding in the "_name" fields for category & priority
+  return formattedTasks as Task[];
 };
 
 export const getActiveTasksNeedingReminders = async (user_id: string) => {
@@ -264,8 +282,6 @@ export const getCategories = async (user_id: string) => {
   if (error) {
     throw new Error(error.message);
   }
-
-  console.log("Fetched categories:", categories);
 
   // If no priorities are found, return default priorities
   if (!categories || categories.length === 0) {
